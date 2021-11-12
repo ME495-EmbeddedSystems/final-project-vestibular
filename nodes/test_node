@@ -1,0 +1,32 @@
+#!/usr/bin/env python3
+'''
+test node ~ testing area to get to know moveit vs ros control
+
+PUBLISHERS:
+  + 
+SUBSCRIBERS
+  +  
+SERVICES:
+  none
+PARAMETERS
+  + none
+'''
+#imports
+import rospy
+from std_srvs.srv import Empty, EmptyResponse
+from geometry_msgs.msg import Twist, Vector3
+from nav_msgs.msg import Odometry
+from tf_conversions import transformations
+import numpy as np
+import geometry_msgs.msg
+
+class testing:
+    def __init__(self):
+         '''
+        The initiation function of the flip. Initiates subscribers and variables
+        INPUTS:
+            none
+        OUTPUTS:
+            none
+        '''
+        
