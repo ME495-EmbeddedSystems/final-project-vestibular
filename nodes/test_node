@@ -27,18 +27,74 @@ from geometry_msgs.msg import Twist, Vector3, Pose
 import geometry_msgs.msg as geo
 from moveit_commander import move_group
 from moveit_commander.conversions import pose_to_list
-from arm_move.srv import Reset, Step, ResetResponse, Follow, FollowResponse
+# from arm_move.srv import Reset, Step, ResetResponse, Follow, FollowResponse
 from moveit_msgs.msg import MoveItErrorCodes
 
 
 
 class testing:
     def __init__(self):
-         '''
+        '''
         The initiation function of the flip. Initiates subscribers and variables
         INPUTS:
             none
         OUTPUTS:
             none
         '''
+        self.robot = moveit_commander.RobotCommander()
+        self.scene = moveit_commander.PlanningSceneInterface()
+        self.move_group = moveit_commander.MoveGroupCommander("panda_arm") 
+        self.grip_group = moveit_commander.MoveGroupCommander("hand")
+
+        self.__test = rospy.Service("do_try",Empty,self.attempt_movement)
+
+        self.ee=self.move_group.get_end_effector_link()
+        #ready: extended, open closed
+    
+    def attempt_movement(self,req):
+      mg = self.move_group
+      gg = self.grip_group
+      
+      
+      # joint_names = mg.get_joint_names()
+      # print(f"Joint names {joint_names}")
+
+      # joint_lims = self.robot.__get_joint_limits()
+      # print(f"Joint limits are {joint_lims}")
+
+      joints = mg.get_joints()
+      print(f"Current joint positions {joints}")
+      
+      print(f"Current joint 1 position {joints.panda_joint1}")
+
+      #for visual
+      # gg.set_named_target('Closed')
+      # gg.go(wait='true')
+      # gg.stop()
+
+      # gg.set_named_target('Open')
+      # gg.go(wait='true')
+      # gg.stop()
+      ### find out how to change joints here
+
+
+      ####
+
+      # mg.move(joints,wait=False)
+
+      return EmptyResponse
+
+
         
+if __name__=='__main__': # main run for node. inits node, runs class, and spins
+  '''
+  Your quintessential main function to run the class and init the node
+  INPUTS:
+      none
+  OUTPUTS:
+      Empty
+  '''
+  moveit_commander.roscpp_initialize(sys.argv)
+  rospy.init_node('testing_node')
+  testing()
+  rospy.spin()
