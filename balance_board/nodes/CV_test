@@ -1,0 +1,21 @@
+
+
+import rospy
+from std_srvs.srv import Empty, EmptyResponse
+from geometry_msgs.msg import Twist, Vector3
+from tf_conversions import transformations
+import tf2_ros
+import geometry_msgs.msg
+from balance_board.msg import Ball_pose
+
+class Comp_vis:
+    def __init__(self):
+        '''
+        The initiation function of the computer vision. Initiates subscribers and variables
+        INPUTS:
+            none
+        OUTPUTS:
+            none
+        '''
+
+        self.pose_pub = rospy.Publisher("/ball_pose",Ball_pose, queue_size=10)
