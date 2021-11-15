@@ -14,6 +14,7 @@ PARAMETERS
 #importsls
 
 import rospy
+from numpy import pi
 from std_srvs.srv import Empty, EmptyResponse
 from geometry_msgs.msg import Twist, Vector3
 from nav_msgs.msg import Odometry
@@ -42,16 +43,39 @@ class testing:
         OUTPUTS:
             none
         '''
+        
+        self.time=rospy.get_time()
         self.robot = moveit_commander.RobotCommander()
         self.scene = moveit_commander.PlanningSceneInterface()
         self.move_group = moveit_commander.MoveGroupCommander("panda_arm") 
         self.grip_group = moveit_commander.MoveGroupCommander("hand")
 
         self.__test = rospy.Service("do_try",Empty,self.attempt_movement)
+        self.__test_loop = rospy.Service("do_loop",Empty,self.loop_callback)
+        self.__loop_off = rospy.Service("loop_off",Empty,self.loop_off)
 
         self.ee=self.move_group.get_end_effector_link()
+        self.loop_on =0
+        
         #ready: extended, open closed
     
+    def loop_off(self,req):
+      self.loop_on =0
+      return EmptyResponse()
+
+    def loop_callback(self,req):
+      mg = self.move_group
+      self.loop_on=1
+      while self.loop_on == 1:
+        
+        change = np.sin(self.time)*0.01
+        joint_loop = {'panda_joint1':0,'panda_joint2': -pi/2,'panda_joint3':pi/2,'panda_joint4': -pi/2, 'panda_joint5':-pi/2, 'panda_joint6':pi/2+change,'panda_joint7': -pi/4}
+        mg.set_joint_value_target(joint_loop)
+        mg.go(wait='true')
+
+
+      return EmptyResponse()
+
     def attempt_movement(self,req):
       mg = self.move_group
       gg = self.grip_group
@@ -64,18 +88,30 @@ class testing:
       # print(f"Joint limits are {joint_lims}")
 
       joints = mg.get_joints()
-      print(f"Current joint positions {joints}")
+      print(f"Joint names {joints}")
       
-      print(f"Current joint 1 position {joints.panda_joint1}")
+      joint_val = mg.get_current_joint_values()
+      print(f"Current joint values {joint_val}")
+
+      joint_val[0] = 0
+      # print(joint_val)
+
+      joint_home = {'panda_joint1':0,'panda_joint2': -pi/2,'panda_joint3':pi/2,'panda_joint4': -pi/2, 'panda_joint5':-pi/2, 'panda_joint6':pi/2,'panda_joint7': -pi/4}
+      
+      mg.set_joint_value_target(joint_home)
+      mg.go(wait='false')
+
+      #go with pose
+      #set_joint_value_targets
 
       #for visual
-      # gg.set_named_target('Closed')
-      # gg.go(wait='true')
-      # gg.stop()
+      gg.set_named_target('close')
+      gg.go(wait='false')
+      gg.stop()
 
-      # gg.set_named_target('Open')
-      # gg.go(wait='true')
-      # gg.stop()
+      gg.set_named_target('open')
+      gg.go(wait='true')
+      gg.stop()
       ### find out how to change joints here
 
 
@@ -83,7 +119,7 @@ class testing:
 
       # mg.move(joints,wait=False)
 
-      return EmptyResponse
+      return EmptyResponse()
 
 
         
