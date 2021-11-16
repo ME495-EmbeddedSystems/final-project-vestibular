@@ -1,5 +1,6 @@
-
-
+#!/usr/bin/env python3
+import pyrealsense2 as rs
+import numpy as np
 import rospy
 from std_srvs.srv import Empty, EmptyResponse
 from geometry_msgs.msg import Twist, Vector3
@@ -7,6 +8,11 @@ from tf_conversions import transformations
 import tf2_ros
 import geometry_msgs.msg
 from balance_board.msg import Ball_pose
+import cv2
+import modern_robotics as mr
+import time
+import argparse
+from pupil_apriltags import Detector
 
 class Comp_vis:
     def __init__(self):
@@ -17,5 +23,307 @@ class Comp_vis:
         OUTPUTS:
             none
         '''
-
+        self.r=rospy.Rate(60)
         self.pose_pub = rospy.Publisher("/ball_pose",Ball_pose, queue_size=10)
+        
+        self.at_detector = Detector(families='tag36h11',
+                       nthreads=1,
+                       quad_decimate=2.0,
+                       quad_sigma=0.8,
+                       refine_edges=1,
+                       decode_sharpening=0.25,
+                       debug=0)
+
+
+
+        
+        # self.lower_orng = np.array([3,233,174])
+        # self.upper_orng = np.array([27,255,255])
+        self.lower_orng = np.array([11,145,131])
+        self.upper_orng = np.array([37,255,227])
+
+
+        self.ball_detection()
+
+
+
+    def on_low_H_thresh_trackbar(self,val):
+        self.low_H
+        self.high_H
+        self.low_H = val
+        self.low_H = min(self.high_H-1, self.low_H)
+        cv2.setTrackbarPos(self.low_H_name, self.window_detection_name, self.low_H)
+    def on_high_H_thresh_trackbar(self,val):
+        self.low_H
+        self.high_H
+        self.high_H = val
+        self.high_H = max(self.high_H, self.low_H+1)
+        cv.setTrackbarPos(self.high_H_name, self.window_detection_name, self.high_H)
+    def on_low_S_thresh_trackbar(self,val):
+        self.low_S
+        self.high_S
+        self.low_S = val
+        self.low_S = min(self.high_S-1, self.low_S)
+        cv2.setTrackbarPos(self.low_S_name, self.window_detection_name, self.low_S)
+    def on_high_S_thresh_trackbar(self,val):
+        self.low_S
+        self.high_S
+        self.high_S = val
+        self.high_S = max(self.high_S, self.low_S+1)
+        cv2.setTrackbarPos(self.high_S_name, self.window_detection_name, self.high_S)
+    def on_low_V_thresh_trackbar(self,val):
+        self.low_V
+        self.high_V
+        self.low_V = val
+        self.low_V = min(self.high_V-1, self.low_V)
+        cv2.setTrackbarPos(self.low_V_name, self.window_detection_name, self.low_V)
+    def on_high_V_thresh_trackbar(self,val):
+        self.low_V
+        self.high_V
+        self.high_V = val
+        self.high_V = max(self.high_V, self.low_V+1)
+        cv2.setTrackbarPos(self.high_V_name, self.window_detection_name, self.high_V)
+
+    
+    def ball_detection(self):
+        '''
+        CV function for detecting ball.
+        INPUTS:
+            none
+        OUTPUTS:
+            none
+        '''
+
+        self.max_value = 255
+        self.max_value_H = 360//2
+        self.low_H = 0
+        self.low_S = 0
+        self.low_V = 0
+        self.high_H = self.max_value_H
+        self.high_S = self.max_value
+        self.high_V = self.max_value
+        self.window_capture_name = 'Video Capture'
+        self.window_detection_name = 'Object Detection'
+        self.low_H_name = 'Low H'
+        self.low_S_name = 'Low S'
+        self.low_V_name = 'Low V'
+        self.high_H_name = 'High H'
+        self.high_S_name = 'High S'
+        self.high_V_name = 'High V'
+        
+        # parser = argparse.ArgumentParser(description='Code for Thresholding Operations using inRange tutorial.')
+        # parser.add_argument('--camera', help='Camera devide number.', default=0, type=int)
+        # args = parser.parse_args()
+        # cap = cv.VideoCapture(args.camera)
+
+        cv2.namedWindow(self.window_capture_name)
+        cv2.namedWindow(self.window_detection_name)
+        cv2.createTrackbar(self.low_H_name, self.window_detection_name , self.low_H, self.max_value_H, self.on_low_H_thresh_trackbar)
+        cv2.createTrackbar(self.high_H_name, self.window_detection_name , self.high_H, self.max_value_H, self.on_high_H_thresh_trackbar)
+        cv2.createTrackbar(self.low_S_name, self.window_detection_name , self.low_S, self.max_value, self.on_low_S_thresh_trackbar)
+        cv2.createTrackbar(self.high_S_name, self.window_detection_name , self.high_S, self.max_value, self.on_high_S_thresh_trackbar)
+        cv2.createTrackbar(self.low_V_name, self.window_detection_name , self.low_V, self.max_value, self.on_low_V_thresh_trackbar)
+        cv2.createTrackbar(self.high_V_name, self.window_detection_name , self.high_V, self.max_value, self.on_high_V_thresh_trackbar)
+        # #Alignment inits
+        pipeline = rs.pipeline()
+
+        config = rs.config()
+
+        pipeline_wrapper = rs.pipeline_wrapper(pipeline)
+        pipeline_profile = config.resolve(pipeline_wrapper)
+        device = pipeline_profile.get_device()
+        device_product_line = str(device.get_info(rs.camera_info.product_line))
+        
+
+        found_rgb = False
+        for s in device.sensors:
+            if s.get_info(rs.camera_info.name) == 'RGB Camera':
+                found_rgb = True
+                break
+        if not found_rgb:
+            print("The demo requires Depth camera with Color sensor")
+            exit(0)
+
+        config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
+
+        if device_product_line == 'L500':
+            config.enable_stream(rs.stream.color, 960, 540, rs.format.bgr8, 30)
+        else:
+            config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
+
+
+        # Start streaming
+        profile = pipeline.start(config)
+        intr_profile = profile.get_stream(rs.stream.color)
+        intr = intr_profile.as_video_stream_profile().get_intrinsics()
+        print(intr)
+        # Getting the depth sensor's depth scale (see rs-align example for explanation)
+        depth_sensor = profile.get_device().first_depth_sensor()
+        depth_scale = depth_sensor.get_depth_scale()
+        print("Depth Scale is: " , depth_scale)
+
+        # We will be removing the background of objects more than
+        #  clipping_distance_in_meters meters away
+        clipping_distance_in_meters = 1 #1 meter
+        clipping_distance = clipping_distance_in_meters / depth_scale
+
+
+        # Create an align object
+        # rs.align allows us to perform alignment of depth frames to others frames
+        # The "align_to" is the stream type to which we plan to align depth frames.
+        align_to = rs.stream.color
+        align = rs.align(align_to)
+
+        #cv2.imshow("name",0)
+        #cv2.newWindow()
+        #config.enable_record_to_file(cvRecording)
+
+        # waiting function
+        waiter = 0
+
+
+        # Streaming loop
+        try:
+            while True:
+                # Get frameset of color and depth
+                frames = pipeline.wait_for_frames()
+                # frames.get_depth_frame() is a 640x360 depth image
+
+                # Align the depth frame to color frame
+                aligned_frames = align.process(frames)
+
+                # Get aligned frames
+                aligned_depth_frame = aligned_frames.get_depth_frame() # aligned_depth_frame is a 640x480 depth image
+                color_frame = aligned_frames.get_color_frame()
+
+                # Validate that both frames are valid
+                if not aligned_depth_frame or not color_frame:
+                    continue
+
+                depth_image = np.asanyarray(aligned_depth_frame.get_data())
+                color_image = np.asanyarray(color_frame.get_data())
+
+                # Remove background - Set pixels further than clipping_distance to grey
+                grey_color = 153
+                depth_image_3d = np.dstack((depth_image,depth_image,depth_image)) #depth image is 1 channel, color is 3 channels
+                bg_removed = np.where((depth_image_3d > clipping_distance) | (depth_image_3d <= 0), grey_color, color_image)
+
+                hsv = cv2.cvtColor(bg_removed, cv2.COLOR_BGR2HSV)
+                
+                frame_threshold = cv2.inRange(hsv, (self.low_H, self.low_S, self.low_V), (self.high_H, self.high_S, self.high_V))
+                # define range of blue color in HSV
+                # print(self.low_H)
+
+                # Threshold the HSV image to get only purple colors
+                mask = cv2.inRange(hsv, self.lower_orng, self.upper_orng)
+                # Bitwise-AND mask and original image
+                res = cv2.bitwise_and(bg_removed,bg_removed, mask= mask)
+                cv2.imshow('frame',bg_removed)
+                cv2.imshow('mask',mask)
+                cv2.imshow('res',res)
+                # print(frame_threshold)
+                cv2.imshow(self.window_detection_name, frame_threshold)
+                # cv2.imshow(self.window_detection_name)
+
+                contours, hierarchy = cv2.findContours(mask , cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+                #print(contours)
+                try:
+
+                    tags = self.at_detector.detect(color_image, estimate_tag_pose=True, camera_params=[613.387,613.304,325.264,235.462], tag_size=0.0711)#######################
+                    print(tags)
+                except:
+                    print("Apriltags fail")
+
+
+                try:
+                    
+                    try:
+                        c = max(contours,key=cv2.contourArea)
+                        #print(f"this is c = {c}")
+                    except:
+                        print("the issue is with c")
+                        c = c*0
+                    try:
+                        M = cv2.moments(c)
+                    except:
+                        print("the issue is with moments")
+                    try:
+                        cx = int(M['m10']/M['m00'])
+                        cy = int(M['m01']/M['m00'])
+                        center = (int(cx),int(cy))
+                    except:
+                        print("the issue is with cxcy")
+                    cv2.circle(bg_removed, center, 10,(0,0,255),-1)
+                    try:
+                        rect = cv2.minAreaRect(c)
+                        box = cv2.boxPoints(rect)
+                        box = np.int0(box)
+                        cv2.drawContours(bg_removed, [box],0,(0,0,255),2)
+                        ellipse = cv2.fitEllipse(c)
+                        cv2.ellipse(bg_removed,ellipse,(0,0,255),2)
+                    except:
+                        print("box or ellipse problem")
+                    
+                    try:
+                        contour_depth = depth_image[c]
+                        #print(f" controur depth = {contour_depth}")
+                        
+                        filter_depth = contour_depth < 1000
+                        new_depth = contour_depth[filter_depth]
+                        filter2_depth = new_depth > 0
+                        f_depth = new_depth[filter2_depth]
+                        mean_depth= np.mean(f_depth)
+                        #print(f"average depth {mean_depth}")
+                    except:
+                        print("Failed exp")
+
+                    try:
+                        depth = depth_image[cy][cx]
+                        #print(f"pix coords {cx},{cy}")
+                        print(f"depth of centroid is {depth}")
+                    except:
+                        print("depth issue")
+                    try:
+                        pen_coord = rs.rs2_deproject_pixel_to_point(intr,[cx,cy],depth)
+                        print(pen_coord)
+
+                    except:
+                        print("pixel to point issue")
+                except:
+                    print("sum ting wong")
+
+  
+                cv2.drawContours(bg_removed, contours, -1, (0,255,0),3)
+
+
+
+                # Render images:
+                #   depth align to color on left
+                #   depth on right
+                depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)
+                images = np.hstack((bg_removed, depth_colormap))
+
+                cv2.namedWindow('Align Example', cv2.WINDOW_NORMAL)
+                cv2.imshow('Align Example', images)
+                key = cv2.waitKey(1)
+                # Press esc or 'q' to close the image window
+                if key & 0xFF == ord('q') or key == 27:
+                    cv2.destroyAllWindows()
+                    break
+        except:
+            print("first try fail")
+        finally:
+            pipeline.stop()
+
+
+if __name__=='__main__': # main run for node. inits node, runs class, and spins
+  '''
+  Your quintessential main function to run the class and init the node
+  INPUTS:
+      none
+  OUTPUTS:
+      Empty
+  '''
+  rospy.init_node('CV_test_node')
+  Comp_vis()
+  rospy.spin()
