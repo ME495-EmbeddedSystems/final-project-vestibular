@@ -29,6 +29,7 @@ from geometry_msgs.msg import Twist, Vector3, Pose
 import geometry_msgs.msg as geo
 from sensor_msgs.msg import JointState
 from control_msgs.msg import JointTrajectoryControllerState
+from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 # from moveit_commander import move_group
 # from moveit_commander.conversions import pose_to_list
 # from arm_move.srv import Reset, Step, ResetResponse, Follow, FollowResponse
@@ -47,11 +48,17 @@ class rc_testing:
         '''
         
         self.time=rospy.get_time()
-        # self.robot = moveit_commander.RobotCommander()
-        # self.scene = moveit_commander.PlanningSceneInterface()
-        # self.move_group = moveit_commander.MoveGroupCommander("panda_arm") 
-        # self.grip_group = moveit_commander.MoveGroupCommander("hand")
-        self.fr_pub = rospy.Publisher("position_joint_trajectory_controller/state",JointTrajectoryControllerState,queue_size = 10)
+        self.robot = moveit_commander.RobotCommander()
+        self.scene = moveit_commander.PlanningSceneInterface()
+        self.move_group = moveit_commander.MoveGroupCommander("panda_arm") 
+        self.grip_group = moveit_commander.MoveGroupCommander("hand")
+
+        
+        self.fr_pub = rospy.Publisher("position_joint_trajectory_controller/command",JointTrajectory,queue_size = 10)
+        # self.fake_pub_des= rospy.Publisher("franka_state_controller/joint_states_desired",JointState,queue_size=10)
+        # self.fake_pub= rospy.Publisher("franka_state_controller/joint_states",JointState,queue_size=10)
+        # self.pub_des= rospy.Publisher("joint_states_desired",JointState,queue_size=10)
+        # self.pub= rospy.Publisher("joint_states",JointState,queue_size=10)
 
         self.__test = rospy.Service("do_try",Empty,self.attempt_movement)
         self.__test_loop = rospy.Service("do_loop",Empty,self.loop_callback)
@@ -67,26 +74,52 @@ class rc_testing:
       return EmptyResponse()
 
     def loop_callback(self,req):
-    #   mg = self.move_group
+      mg = self.move_group
+      joint_home = {'panda_joint1':0,'panda_joint2': -pi/2,'panda_joint3':pi/2,'panda_joint4': -pi/2, 'panda_joint5':-pi/2, 'panda_joint6':pi/2,'panda_joint7': -pi/4}
+      
+      mg.set_joint_value_target(joint_home)
+      mg.go(wait='true')
+      
       self.loop_on=1
+      print("loop start")
       while self.loop_on == 1:
         
-        change = np.sin(self.time)*0.01
+        change = np.sin(self.time*0.1)*0.1
         joint_loop = {'panda_joint1':0,'panda_joint2': -pi/2,'panda_joint3':pi/2,'panda_joint4': -pi/2, 'panda_joint5':-pi/2, 'panda_joint6':pi/2+change,'panda_joint7': -pi/4}
-        fr_js = JointTrajectoryControllerState()
-        fr_js.joint_names=['panda_joint1','panda_joint2','panda_joint3','panda_joint4', 'panda_joint5', 'panda_joint6','panda_joint7']
-        fr_js.desired.positions=[0,pi/2,pi/2, -pi/2, -pi/2, pi/2+change, -pi/4]
-        self.fr_pub.publish(fr_js)
-        print('looping')
+        # fake_js = JointState()
+        # fake_js.name=['panda_joint1','panda_joint2','panda_joint3','panda_joint4', 'panda_joint5', 'panda_joint6','panda_joint7']
+        # fake_js.position=[0,pi/2,pi/2, -pi/2, -pi/2, pi/2+change, -pi/4]
+        # self.fake_pub.publish(fake_js)
+        # self.fake_pub_des.publish(fake_js)
+        # self.pub.publish(fake_js)
+        # self.pub_des.publish(fake_js)
+
+        new_js = JointTrajectory()
+        new_js.joint_names = ['panda_joint1','panda_joint2','panda_joint3','panda_joint4', 'panda_joint5', 'panda_joint6','panda_joint7']
+        
+        js_point = JointTrajectoryPoint()
+        js_point.positions = [0,-pi/2,pi/2, -pi/2, -pi/2, pi/2+change, -pi/4]
+        js_point.time_from_start.nsecs = 10000000
+        new_js.points = [js_point]
+        
+        self.fr_pub.publish(new_js)
+
+
+
+        # fr_js = JointTrajectoryControllerState()
+        # fr_js.joint_names=['panda_joint1','panda_joint2','panda_joint3','panda_joint4', 'panda_joint5', 'panda_joint6','panda_joint7']
+        # fr_js.desired.positions=[0,pi/2,pi/2, -pi/2, -pi/2, pi/2+change, -pi/4]
+        # self.fr_pub.publish(fr_js)
+        # print('looping')
         # mg.set_joint_value_target(joint_loop)
         # mg.go(wait='true')
-
+      print("loop end")
 
       return EmptyResponse()
 
     def attempt_movement(self,req):
-    #   mg = self.move_group
-    #   gg = self.grip_group
+      mg = self.move_group
+      gg = self.grip_group
       
       
       # joint_names = mg.get_joint_names()
@@ -95,31 +128,31 @@ class rc_testing:
       # joint_lims = self.robot.__get_joint_limits()
       # print(f"Joint limits are {joint_lims}")
 
-    #   joints = mg.get_joints()
-    #   print(f"Joint names {joints}")
+      # joints = mg.get_joints()
+      # print(f"Joint names {joints}")
       
-    #   joint_val = mg.get_current_joint_values()
-    #   print(f"Current joint values {joint_val}")
+      joint_val = mg.get_current_joint_values()
+      print(f"Current joint values {joint_val}")
 
-    #   joint_val[0] = 0
-    #   # print(joint_val)
+      joint_val[0] = 0
+      # print(joint_val)
 
-    #   joint_home = {'panda_joint1':0,'panda_joint2': -pi/2,'panda_joint3':pi/2,'panda_joint4': -pi/2, 'panda_joint5':-pi/2, 'panda_joint6':pi/2,'panda_joint7': -pi/4}
+      joint_home = {'panda_joint1':0,'panda_joint2': -pi/2,'panda_joint3':pi/2,'panda_joint4': -pi/2, 'panda_joint5':-pi/2, 'panda_joint6':pi/2,'panda_joint7': -pi/4}
       
-    #   mg.set_joint_value_target(joint_home)
-    #   mg.go(wait='false')
+      mg.set_joint_value_target(joint_home)
+      mg.go(wait='false')
 
-    #   #go with pose
-    #   #set_joint_value_targets
+      #go with pose
+      #set_joint_value_targets
 
-    #   #for visual
-    #   gg.set_named_target('close')
-    #   gg.go(wait='false')
-    #   gg.stop()
+      #for visual
+      gg.set_named_target('close')
+      gg.go(wait='false')
+      gg.stop()
 
-    #   gg.set_named_target('open')
-    #   gg.go(wait='true')
-    #   gg.stop()
+      gg.set_named_target('open')
+      gg.go(wait='true')
+      gg.stop()
       ### find out how to change joints here
 
 
