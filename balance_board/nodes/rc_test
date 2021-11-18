@@ -82,9 +82,11 @@ class rc_testing:
       
       self.loop_on=1
       print("loop start")
+      rate = rospy.Rate(100)
+      t = 0
       while self.loop_on == 1:
         
-        change = np.sin(self.time*0.1)*0.1
+        change = np.sin(t*pi/4)*0.5
         joint_loop = {'panda_joint1':0,'panda_joint2': -pi/2,'panda_joint3':pi/2,'panda_joint4': -pi/2, 'panda_joint5':-pi/2, 'panda_joint6':pi/2+change,'panda_joint7': -pi/4}
         # fake_js = JointState()
         # fake_js.name=['panda_joint1','panda_joint2','panda_joint3','panda_joint4', 'panda_joint5', 'panda_joint6','panda_joint7']
@@ -98,13 +100,14 @@ class rc_testing:
         new_js.joint_names = ['panda_joint1','panda_joint2','panda_joint3','panda_joint4', 'panda_joint5', 'panda_joint6','panda_joint7']
         
         js_point = JointTrajectoryPoint()
-        js_point.positions = [0,-pi/2,pi/2, -pi/2, -pi/2, pi/2+change, -pi/4]
+        js_point.positions = [0,-pi/2,pi/2, -pi/2, -pi/2 + change, pi/2 + change, -pi/4]
+        print(pi/2 + change)
         js_point.time_from_start.nsecs = 10000000
         new_js.points = [js_point]
         
         self.fr_pub.publish(new_js)
-
-
+        t = t + 0.01
+        rate.sleep()
 
         # fr_js = JointTrajectoryControllerState()
         # fr_js.joint_names=['panda_joint1','panda_joint2','panda_joint3','panda_joint4', 'panda_joint5', 'panda_joint6','panda_joint7']

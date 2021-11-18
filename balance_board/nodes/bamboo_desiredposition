@@ -1,0 +1,36 @@
+#!/usr/bin/env python
+"""
+This node is called flip. It publishes velocity commands in the form of Twist messages to the /diff/cmd_vel topic.
+
+"""
+import rospy
+import tf2_ros
+import geometry_msgs.msg
+from std_srvs.srv import Empty, EmptyResponse
+from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
+
+
+class MoveToPoint:
+    def __init__(self):
+        self.pub = rospy.Publisher('/position_joint_trajectory_controller/command', JointTrajectory, queue_size=5)
+        self.move = rospy.Service('move', Empty, self.servcallback)
+
+    def joint_states(self):
+        mtp = JointTrajectory()
+        mtp_points = JointTrajectoryPoint()
+        mtp.joint_names = ['panda_joint1','panda_joint2','panda_joint3','panda_joint4','panda_joint5','panda_joint6','panda_joint7']
+        mtp_points.positions = [0.10022933204039225, -0.38842216264896545, -0.1033460415343626, -2.5514113638655007, -0.05330979986187987, 2.173777705245548, 1]
+        mtp.points = [mtp_points]
+        mtp_points.time_from_start.secs = 20
+        self.pub.publish(mtp)
+
+    def servcallback(self, req):
+        self.joint_states()
+        return EmptyResponse()
+
+
+
+if __name__ == "__main__":
+    rospy.init_node("bamboo")
+    node = MoveToPoint()
+    rospy.spin()
