@@ -1,0 +1,68 @@
+#!/usr/bin/env python3
+'''
+test node ~ testing area to get to know moveit vs ros control
+
+PUBLISHERS:
+  + 
+SUBSCRIBERS
+  +  
+SERVICES:
+  none
+PARAMETERS
+  + none
+'''
+#imports
+import rospy
+from std_srvs.srv import Empty, EmptyResponse
+from geometry_msgs.msg import Twist, Vector3
+from nav_msgs.msg import Odometry
+from tf_conversions import transformations
+import numpy as np
+import geometry_msgs.msg
+
+class Controller:
+    def __init__(self):
+        '''
+        The initiation function of the flip. Initiates subscribers and variables
+        INPUTS:
+            none
+        OUTPUTS:
+            none
+        '''
+        self.xdot_max = 1 # the threshold velocity we set
+        self.xdot_threshold = 0.1 
+        self.x_target_threshold = 0.01
+        self.x_cur  =  # cureent postion from camera
+        self.xdot_cur = 0 # current velocity (rest)
+        self.theta_cur =  # current angle from robot 
+        self.x_target = # target position
+        self.msg_pub = rospy.Publisher("", Twist, queue_size = 10)  
+        self.duration = 0.1 # rate should match the carmera frame
+        rospy.Timer(rospy.Duration(self.duration), self.timer_callback)
+        
+    def timer_callback(self, event):
+        xddot_cur = 9.81 * np.sin(self.theta_cur)
+        self.xdot_cur += xddot_cur * self.duration
+        if abs(self.x_cur - self.x_target) > self.x_target_threshold:
+            if self.xdot_cur - self.xdot_max > self.xdot_threshold:
+                # control the theta to be the opposite direction, might times the gain(proportion) in this control
+            elif abs(self.xdot_cur - self.xdot_max) < self.xdot_threshold:
+                # control the theta to be zero (flat)      
+            elif self.xdot_max - self.xdot_cur > self.xdot_threshold:
+                # hold the theta constantly 
+        else:
+            # control the theta to be zero
+        
+                   
+        
+def main():
+    
+    rospy.init_node('controller', anonymous=True)
+    controller = Controller()
+    rospy.spin()
+
+if __name__ == '__main__':
+    try:
+        main()
+    except rospy.ROSInterruptException:
+        pass
