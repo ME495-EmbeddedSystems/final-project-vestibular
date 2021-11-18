@@ -26,13 +26,13 @@ class Comp_vis:
         self.r=rospy.Rate(60)
         self.pose_pub = rospy.Publisher("/ball_pose",Ball_pose, queue_size=10)
         
-        self.at_detector = Detector(families='tag36h11',
-                       nthreads=1,
-                       quad_decimate=2.0,
-                       quad_sigma=0.8,
-                       refine_edges=1,
-                       decode_sharpening=0.25,
-                       debug=0)
+        # self.at_detector = Detector(families='tag36h11',
+        #                nthreads=1,
+        #                quad_decimate=2.0,
+        #                quad_sigma=0.8,
+        #                refine_edges=1,
+        #                decode_sharpening=0.25,
+        #                debug=0)
 
 
 
@@ -41,6 +41,9 @@ class Comp_vis:
         # self.upper_orng = np.array([27,255,255])
         self.lower_orng = np.array([11,145,131])
         self.upper_orng = np.array([37,255,227])
+
+        self.lower_bluemark = np.array([11,145,131])
+        self.upper_bluemark = np.array([37,255,227])
 
 
         self.ball_detection()
@@ -93,6 +96,8 @@ class Comp_vis:
         OUTPUTS:
             none
         '''
+
+        poses = Ball_pose()
 
         self.max_value = 255
         self.max_value_H = 360//2
@@ -216,25 +221,33 @@ class Comp_vis:
 
                 # Threshold the HSV image to get only purple colors
                 mask = cv2.inRange(hsv, self.lower_orng, self.upper_orng)
+                way_mask = cv2.inRange(hsv, self.lower_bluemark, self.upper_bluemark)
                 # Bitwise-AND mask and original image
                 res = cv2.bitwise_and(bg_removed,bg_removed, mask= mask)
                 cv2.imshow('frame',bg_removed)
                 cv2.imshow('mask',mask)
                 cv2.imshow('res',res)
+                
+                ##
+                res2 = cv2.bitwise_and(bg_removed,bg_removed, mask= way_mask)
+                cv2.imshow('waypoint',res2)
+
                 # print(frame_threshold)
                 cv2.imshow(self.window_detection_name, frame_threshold)
                 # cv2.imshow(self.window_detection_name)
 
                 contours, hierarchy = cv2.findContours(mask , cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+                way_contours, way_hierarchy = cv2.findContours(way_mask , cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
                 #print(contours)
-                try:
+                
+                # ################################### Apriltag attempt
+                # try:
+                #     tags = self.at_detector.detect(color_image, estimate_tag_pose=True, camera_params=[613.387,613.304,325.264,235.462], tag_size=0.0711)#######################
+                #     print(tags)
+                # except:
+                #     print("Apriltags fail")
 
-                    tags = self.at_detector.detect(color_image, estimate_tag_pose=True, camera_params=[613.387,613.304,325.264,235.462], tag_size=0.0711)#######################
-                    print(tags)
-                except:
-                    print("Apriltags fail")
-
-
+                ####################################### ball contours
                 try:
                     
                     try:
@@ -263,20 +276,6 @@ class Comp_vis:
                         cv2.ellipse(bg_removed,ellipse,(0,0,255),2)
                     except:
                         print("box or ellipse problem")
-                    
-                    try:
-                        contour_depth = depth_image[c]
-                        #print(f" controur depth = {contour_depth}")
-                        
-                        filter_depth = contour_depth < 1000
-                        new_depth = contour_depth[filter_depth]
-                        filter2_depth = new_depth > 0
-                        f_depth = new_depth[filter2_depth]
-                        mean_depth= np.mean(f_depth)
-                        #print(f"average depth {mean_depth}")
-                    except:
-                        print("Failed exp")
-
                     try:
                         depth = depth_image[cy][cx]
                         #print(f"pix coords {cx},{cy}")
@@ -284,16 +283,80 @@ class Comp_vis:
                     except:
                         print("depth issue")
                     try:
-                        pen_coord = rs.rs2_deproject_pixel_to_point(intr,[cx,cy],depth)
-                        print(pen_coord)
+                        ball_coord = rs.rs2_deproject_pixel_to_point(intr,[cx,cy],depth)
+                        print(ball_coord)
 
                     except:
                         print("pixel to point issue")
                 except:
                     print("sum ting wong")
+                cv2.drawContours(bg_removed, contours, -1, (0,255,0),3)
+
+                ############################################## Waypoint contours
+                try:
+                    try:
+                        way_c = max(way_contours,key=cv2.contourArea)
+                        #print(f"this is c = {c}")
+                    except:
+                        print("waypoint issue is with wayppoint contours")
+                        way_c = way_c*0
+                    try:
+                        way_M = cv2.moments(way_c)
+                    except:
+                        print("waypoint issue is with moments")
+                    try:
+                        way_cx = int(M['m10']/M['m00'])
+                        way_cy = int(M['m01']/M['m00'])
+                        way_center = (int(way_cx),int(way_cy))
+                    except:
+                        print("waypoint issue with cxcy")
+                    cv2.circle(bg_removed, way_center, 10,(255,0,0),-1)
+                    
+                    try:
+                        way_depth = depth_image[way_cy][way_cx]
+                        #print(f"pix coords {cx},{cy}")
+                        print(f"waypoint depth of centroid is {depth}")
+                    except:
+                        print("waypoint depth issue")
+                    try:
+                        way_coord = rs.rs2_deproject_pixel_to_point(intr,[way_cx,way_cy],way_depth)
+                        print(way_coord)
+
+                    except:
+                        print("waypoint pixel to point issue")
+                except:
+                    print("sum ting wong waypoints")
 
   
-                cv2.drawContours(bg_removed, contours, -1, (0,255,0),3)
+                cv2.drawContours(bg_removed, way_contours, -1, (0,255,0),3)
+
+
+                ###### populate publisher msg
+                ##################################    NEEDS Transform!!!!
+                try:
+                    poses.x3 = poses.x2
+                    poses.y3 = poses.y2
+                    poses.z3 = poses.z2
+                except:
+                    print("No x2 coords yet")
+                
+                try:
+                    poses.x2 = poses.x
+                    poses.y2 = poses.y
+                    poses.z2 = poses.z
+                except:
+                    print("No x coords yet")
+                
+                poses.x = cx
+                poses.y = cy
+                poses.z = depth
+                
+                poses.x_way = way_cx
+                poses.x_way = way_cy
+                poses.x_way = way_depth
+
+
+                self.pose_pub.publish(poses)
 
 
 
