@@ -2,3 +2,15 @@
 float64 x #(m)
 float64 y #(m)
 float64 z #(m)
+
+float64 x2 #(m)
+float64 y2 #(m)
+float64 z2 #(m)
+
+float64 x3 #(m)
+float64 y3 #(m)
+float64 z3 #(m)
+
+float64 x_way #(m)
+float64 y_way #(m)
+float64 z_way #(m)

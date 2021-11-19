@@ -1,0 +1,157 @@
+#!/usr/bin/env python3
+'''
+test node ~ testing area to get to know moveit vs ros control
+
+PUBLISHERS:
+  + 
+SUBSCRIBERS
+  +  
+SERVICES:
+  none
+PARAMETERS
+  + none
+'''
+#imports
+
+import rospy
+from numpy import pi
+from std_srvs.srv import Empty, EmptyResponse
+from geometry_msgs.msg import Twist, Vector3
+from nav_msgs.msg import Odometry
+from tf_conversions import transformations
+import numpy as np
+import geometry_msgs.msg
+import sys
+import rospy
+import moveit_commander
+from std_srvs.srv import Empty, EmptyResponse
+from geometry_msgs.msg import Twist, Vector3, Pose
+import geometry_msgs.msg as geo
+from sensor_msgs.msg import JointState
+from control_msgs.msg import JointTrajectoryControllerState
+from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
+
+from balance_board.msg import Ball_pose
+
+
+
+
+class balance:
+    def __init__(self):
+        '''
+        The initiation function of Balanciaga. Initiates publishers, subscribers, and variables
+        INPUTS:
+            none
+        OUTPUTS:
+            none
+        '''
+        
+        self.time=rospy.get_time()
+        self.robot = moveit_commander.RobotCommander()
+        self.scene = moveit_commander.PlanningSceneInterface()
+        self.move_group = moveit_commander.MoveGroupCommander("panda_arm") 
+        self.grip_group = moveit_commander.MoveGroupCommander("hand")
+
+        self.pose_sub = Subscriber("/ball_pose",Ball_pose,self.pose_callback)
+        self.fr_pub = rospy.Publisher("position_joint_trajectory_controller/command",JointTrajectory,queue_size = 10)
+
+        self.__home = rospy.Service("go_home",Empty,self.go_home)
+        self.__test_loop = rospy.Service("loop_on",Empty,self.loop_callback)
+        self.__loop_off = rospy.Service("loop_off",Empty,self.loop_off)
+
+        self.joint_home = {'panda_joint1':0,'panda_joint2': -pi/2,'panda_joint3':pi/2,'panda_joint4': -pi/2, 'panda_joint5':-pi/2, 'panda_joint6':pi/2,'panda_joint7': -pi/4}
+
+        self.loop_on =0
+    
+    def pose_callback(self,data):
+        self.ball_x = data.x
+        self.ball_y = data.y
+        self.ball_z = data.z
+
+        self.ball_x2 = data.x2
+        self.ball_y2 = data.y2
+        self.ball_z2 = data.z2
+
+        self.ball_x3 = data.x3
+        self.ball_y3 = data.y3
+        self.ball_z3 = data.z3
+
+        self.x_way = data.x_way
+        self.y_way = data.y_way
+        self.z_way = data.z_way
+        
+    
+    def loop_off(self,req):
+        self.loop_on =0
+        return EmptyResponse()
+
+    def loop_callback(self,req):
+        #Checking for safety
+        mg = self.move_group
+        joint_val = mg.get_current_joint_values()
+        home = [0 -pi/2,pi/2, -pi/2, -pi/2, pi/2, -pi/4]
+
+        mg.set_joint_value_target(self.joint_home)
+        mg.go(wait='true')
+
+
+        #timing
+        rate = rospy.Rate(100)
+        t = 0
+        
+        if np.allclose(home,joint_val,):
+            self.loop_on=1
+            print("loop start")
+        else:
+            self.loop_on=0
+            print("Robot not in position")
+        
+        while self.loop_on == 1:
+            
+            change = np.sin(t*pi/4)*0.5
+
+            new_js = JointTrajectory()
+            new_js.joint_names = ['panda_joint1','panda_joint2','panda_joint3','panda_joint4', 'panda_joint5', 'panda_joint6','panda_joint7']
+            
+            js_point = JointTrajectoryPoint()
+            js_point.positions = [0,-pi/2,pi/2, -pi/2, -pi/2+change, pi/2+change, -pi/4]
+            js_point.time_from_start.nsecs = 10000000
+            new_js.points = [js_point]
+            
+            self.fr_pub.publish(new_js)
+
+            t = t + 0.01
+            rate.sleep()
+
+        print("loop end")
+
+        return EmptyResponse()
+
+    def go_home(self,req):
+        mg = self.move_group
+
+        joint_val = mg.get_current_joint_values()
+        print(f"Joint values before {joint_val}")
+
+        mg.set_joint_value_target(self.joint_home)
+        mg.go(wait='true')
+
+        joint_val = mg.get_current_joint_values()
+        print(f"Current joint values {joint_val}")
+
+        return EmptyResponse()
+
+
+        
+if __name__=='__main__': # main run for node. inits node, runs class, and spins
+    '''
+    Your quintessential main function to run the class and init the node
+    INPUTS:
+        none
+    OUTPUTS:
+        Empty
+    '''
+    moveit_commander.roscpp_initialize(sys.argv)
+    rospy.init_node('balance')
+    balance()
+    rospy.spin()
