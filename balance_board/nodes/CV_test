@@ -42,8 +42,8 @@ class Comp_vis:
         self.lower_orng = np.array([11,145,131])
         self.upper_orng = np.array([37,255,227])
 
-        self.lower_bluemark = np.array([11,145,131])
-        self.upper_bluemark = np.array([37,255,227])
+        self.lower_bluemark = np.array([74,94,73])
+        self.upper_bluemark = np.array([124,255,174])
 
 
         self.ball_detection()
@@ -169,7 +169,7 @@ class Comp_vis:
 
         # We will be removing the background of objects more than
         #  clipping_distance_in_meters meters away
-        clipping_distance_in_meters = 1 #1 meter
+        clipping_distance_in_meters = 100 #1 meter
         clipping_distance = clipping_distance_in_meters / depth_scale
 
 
@@ -185,6 +185,8 @@ class Comp_vis:
 
         # waiting function
         waiter = 0
+        
+        iteration = 0
 
 
         # Streaming loop
@@ -218,7 +220,7 @@ class Comp_vis:
                 frame_threshold = cv2.inRange(hsv, (self.low_H, self.low_S, self.low_V), (self.high_H, self.high_S, self.high_V))
                 # define range of blue color in HSV
                 # print(self.low_H)
-
+                print("checkpoint 1")
                 # Threshold the HSV image to get only purple colors
                 mask = cv2.inRange(hsv, self.lower_orng, self.upper_orng)
                 way_mask = cv2.inRange(hsv, self.lower_bluemark, self.upper_bluemark)
@@ -227,11 +229,11 @@ class Comp_vis:
                 cv2.imshow('frame',bg_removed)
                 cv2.imshow('mask',mask)
                 cv2.imshow('res',res)
-                
+                print("checkpoint 2")
                 ##
                 res2 = cv2.bitwise_and(bg_removed,bg_removed, mask= way_mask)
                 cv2.imshow('waypoint',res2)
-
+                print("checkpoint 3")
                 # print(frame_threshold)
                 cv2.imshow(self.window_detection_name, frame_threshold)
                 # cv2.imshow(self.window_detection_name)
@@ -248,6 +250,7 @@ class Comp_vis:
                 #     print("Apriltags fail")
 
                 ####################################### ball contours
+                print("checkpoint 4")
                 try:
                     
                     try:
@@ -305,8 +308,8 @@ class Comp_vis:
                     except:
                         print("waypoint issue is with moments")
                     try:
-                        way_cx = int(M['m10']/M['m00'])
-                        way_cy = int(M['m01']/M['m00'])
+                        way_cx = int(way_M['m10']/way_M['m00'])
+                        way_cy = int(way_M['m01']/way_M['m00'])
                         way_center = (int(way_cx),int(way_cy))
                     except:
                         print("waypoint issue with cxcy")
@@ -347,16 +350,25 @@ class Comp_vis:
                 except:
                     print("No x coords yet")
                 
-                poses.x = cx
-                poses.y = cy
-                poses.z = depth
+                try:
+                    print(poses)
+
+                    poses.x = cx
+                    poses.y = cy
+                    poses.z = depth
+                    
+                    poses.x_way = way_cx
+                    poses.y_way = way_cy
+                    poses.z_way = way_depth
+
+                    print("checkpoint pub")
+                    self.pose_pub.publish(poses)
+                except:
+                    print("pub failed")
                 
-                poses.x_way = way_cx
-                poses.x_way = way_cy
-                poses.x_way = way_depth
-
-
-                self.pose_pub.publish(poses)
+                print(f"Time {rospy.get_time}")
+                print(f"iteration {iteration}")
+                iteration +=1
 
 
 
