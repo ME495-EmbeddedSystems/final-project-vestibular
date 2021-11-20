@@ -54,6 +54,7 @@ class balance:
 
         self.pose_sub = rospy.Subscriber("/ball_pose",Ball_pose,self.pose_callback)
         self.fr_pub = rospy.Publisher("position_joint_trajectory_controller/command",JointTrajectory,queue_size = 1)
+        self.interf = rospy.Publisher("angle_updates", JointTrajectory, queue_size = 1)
 
         # self.__test_jbalance = rospy.Service("test_jbal",Empty,self.j_balancer)
         self.__test_dbalance = rospy.Service("dbalance",Empty,self.d_balancer)
@@ -136,6 +137,7 @@ class balance:
             new_js.points = [js_point]
             
             self.fr_pub.publish(new_js)
+            self.interf.publish(new_js)
 
             rate.sleep()
 

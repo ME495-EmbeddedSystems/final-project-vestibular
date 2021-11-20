@@ -11,8 +11,8 @@ class JointControllerInterface:
         self.max_increment = rospy.get_param("max_angle_increment")
         self.pub_freq = rospy.get_param("joint_update_frequency")
 
-        self.angle_subscriber = rospy.Subcriber("angle_updates")
-        self.joint_timer = rospy.Timer(self.pub_freq)
+        self.angle_subscriber = rospy.Subscriber("angle_updates", JointTrajectory, self.angle_subscriber_callback)
+        self.joint_timer = rospy.Timer(rospy.Duration(1/self.pub_freq), self.joint_timer_callback)
         self.fr_pub = rospy.Publisher("position_joint_trajectory_controller/command",JointTrajectory,queue_size = 1)
 
         self.theta_x = 0
@@ -20,19 +20,22 @@ class JointControllerInterface:
 
 
     def angle_subscriber_callback(self, message):
-        self.theta_x = message.theta_x
-        self.theta_y = message.theta_y
+        self.theta = message.points.positions
+        print(self.theta)
+        self.theta_x = self.theta[6]
+        self.theta_y = self.theta[7]
 
     def joint_timer_callback(self, message):
         new_js = JointTrajectory()
         new_js.joint_names = ['panda_joint1','panda_joint2','panda_joint3','panda_joint4', 'panda_joint5', 'panda_joint6','panda_joint7']
         
         js_point = JointTrajectoryPoint()
-        js_point.positions = [0,-pi/2,pi/2, -pi/2, -pi/2+self.theta_x, pi/2+self.theta_y, pi/4]
+        js_point.positions = [0,-pi/2, pi/2, -pi/2, -pi/2+self.theta_x, pi/2+self.theta_y, pi/4]
         js_point.time_from_start.nsecs = 10000000
         new_js.points = [js_point]
         
         self.fr_pub.publish(new_js)
+
 if __name__=='__main__': # main run for node. inits node, runs class, and spins
     '''
     Your quintessential main function to run the class and init the node
