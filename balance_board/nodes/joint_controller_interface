@@ -2,30 +2,51 @@
 
 import rospy
 import moveit_commander
+# from balance_board.msg import BoardPose
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from math import pi
+from std_srvs.srv import Empty, EmptyResponse
+from balance_board.msg import BoardPose
+import sys
 
 class JointControllerInterface:
      
     def __init__(self):
-        self.max_increment = rospy.get_param("max_angle_increment")
-        self.pub_freq = rospy.get_param("joint_update_frequency")
+        self.state = False
 
-        self.angle_subscriber = rospy.Subscriber("angle_updates", JointTrajectory, self.angle_subscriber_callback)
+        self.robot = moveit_commander.RobotCommander()
+        self.scene = moveit_commander.PlanningSceneInterface()
+        self.move_group = moveit_commander.MoveGroupCommander("panda_arm")
+
+        self.joint_home = {'panda_joint1':0,'panda_joint2': -pi/2,'panda_joint3':pi/2,'panda_joint4': -pi/2, 'panda_joint5':-pi/2, 'panda_joint6':pi/2,'panda_joint7': pi/4}
+
+        self.max_increment = rospy.get_param("~max_angle_increment")
+        self.pub_freq = rospy.get_param("~joint_update_frequency")
+
+        self.angle_subscriber = rospy.Subscriber("angle_updates", BoardPose, self.angle_subscriber_callback)
         self.joint_timer = rospy.Timer(rospy.Duration(1/self.pub_freq), self.joint_timer_callback)
         self.fr_pub = rospy.Publisher("position_joint_trajectory_controller/command",JointTrajectory,queue_size = 1)
 
         self.theta_x = 0
         self.theta_y = 0
 
+        self.enable = rospy.Service("start", Empty, self.enable_callback)
+        self.disable = rospy.Service("stop", Empty, self.disable_callback)
+        self.home = rospy.Service("home", Empty, self.home_callback)
+
 
     def angle_subscriber_callback(self, message):
-        self.theta = message.points.positions
-        print(self.theta)
-        self.theta_x = self.theta[6]
-        self.theta_y = self.theta[7]
+        # self.theta = message.points
+        # print(self.theta)
+        # self.theta_x = self.theta[6]
+        # self.theta_y = self.theta[7]
+
+        self.theta_x = message.theta_x
+        self.theta_y = message.theta_y
 
     def joint_timer_callback(self, message):
+        if not self.state:
+            return
         new_js = JointTrajectory()
         new_js.joint_names = ['panda_joint1','panda_joint2','panda_joint3','panda_joint4', 'panda_joint5', 'panda_joint6','panda_joint7']
         
@@ -35,6 +56,29 @@ class JointControllerInterface:
         new_js.points = [js_point]
         
         self.fr_pub.publish(new_js)
+
+    def home_callback(self, message):
+        self.state = False
+        mg = self.move_group
+
+        joint_val = mg.get_current_joint_values()
+        print(f"Joint values before {joint_val}")
+
+        mg.set_joint_value_target(self.joint_home)
+        mg.go(wait='true')
+
+        joint_val = mg.get_current_joint_values()
+        print(f"Current joint values {joint_val}")
+
+        return EmptyResponse()
+
+    def enable_callback(self, message):
+        self.state = True
+        return EmptyResponse()
+
+    def disable_callback(self, message):
+        self.state = False
+        return EmptyResponse()
 
 if __name__=='__main__': # main run for node. inits node, runs class, and spins
     '''

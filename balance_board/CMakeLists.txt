@@ -48,6 +48,7 @@ message_generation
 add_message_files(
    FILES
    Ball_pose.msg
+   BoardPose.msg
 #   Message1.msg
 #   Message2.msg
 )
@@ -160,6 +161,8 @@ include_directories(
 ## in contrast to setup.py, you can choose the destination
  catkin_install_python(PROGRAMS
    nodes/bamboo_desiredposition
+   nodes/balance
+   nodes/joint_controller_interface
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 
