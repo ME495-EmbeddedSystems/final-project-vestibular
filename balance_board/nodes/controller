@@ -19,6 +19,7 @@ from nav_msgs.msg import Odometry
 from tf_conversions import transformations
 import numpy as np
 import geometry_msgs.msg
+import balance_board.msg.Ball_pose
 
 class Controller:
     def __init__(self):
@@ -29,6 +30,8 @@ class Controller:
         OUTPUTS:
             none
         '''
+
+        self.vision_system = rospy.Subscriber("/ball_pose", Ball_pose)
         self.xdot_max = 1 # the threshold velocity we set
         self.xdot_threshold = 0.1 
         self.x_decel_zone = 0.1

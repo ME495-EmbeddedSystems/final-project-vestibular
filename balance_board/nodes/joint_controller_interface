@@ -1,0 +1,41 @@
+#!/usr/bin/env python3
+
+import rospy
+import moveit_commander
+from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
+
+class JointControllerInterface:
+     
+    def __init__(self):
+        self.max_increment = rospy.get_param("max_angle_increment")
+        self.pub_freq = rospy.get_param("joint_update_frequency")
+
+        self.angle_subscriber = rospy.Subcriber("angle_updates")
+        self.joint_timer = rospy.Timer(self.pub_freq)
+        self.fr_pub = rospy.Publisher("position_joint_trajectory_controller/command",JointTrajectory,queue_size = 1)
+
+        self.theta_x = 0
+        self.theta_y = 0
+
+        self.fr_pub = rospy.Publisher("position_joint_trajectory_controller/command",JointTrajectory,queue_size = 1)
+
+
+    def angle_subscriber_callback(self, message):
+        self.theta_x = message.theta_x
+        self.theta_y = message.theta_y
+
+    def joint_timer_callback(self, message):
+        pass
+
+if __name__=='__main__': # main run for node. inits node, runs class, and spins
+    '''
+    Your quintessential main function to run the class and init the node
+    INPUTS:
+        none
+    OUTPUTS:
+        Empty
+    '''
+    moveit_commander.roscpp_initialize(sys.argv)
+    rospy.init_node('joint_controller_interface')
+    myJointControllerInterface = JointControllerInterface()
+    rospy.spin()
