@@ -1,0 +1,13 @@
+<launch>
+
+  <include file="$(find franka_gazebo)/launch/panda.launch">
+    <arg name="gazebo" value="true"/>
+    <!-- Always start in paused mode, and only unpause when spawning the model -->
+    <arg name="paused" value="true"/>
+    <arg name="rviz" value="true"/>
+    <arg name="controller" value="cartesian_impedance_example_controller"/>
+    <arg name="x" value="-0.5"/>
+  </include>
+
+
+</launch>
