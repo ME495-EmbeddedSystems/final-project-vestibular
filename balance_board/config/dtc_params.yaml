@@ -1,6 +1,6 @@
-target_speed: 
-target_decel:
-absolute_distance_threshold:
-vel_kp:
-pos_kp:
-pos_kd:
+target_speed: 0.1
+target_decel: 1000000000
+absolute_distance_threshold: 0
+vel_kp: 0.05
+pos_kp: 0
+pos_kd: 0
