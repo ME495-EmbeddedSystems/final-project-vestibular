@@ -21,7 +21,7 @@ from balance_board.msg import Ball_pose
 import numpy as np
 import math
 # import geometry_msgs.msg
-from balance_board.msg import board_pose
+from balance_board.msg import BoardPose
 
 class DynamicTrapController:
     def __init__(self):
@@ -33,7 +33,7 @@ class DynamicTrapController:
             none
         '''
 
-        self.angle_pub = rospy.Publisher('angle_updates', board_pose, queue_size=10)
+        self.angle_pub = rospy.Publisher('angle_updates', BoardPose, queue_size=10)
         self.vision_system = rospy.Subscriber("/ball_pose", Ball_pose, self.vision_callback)
 
         self.vel_targ = rospy.get_param("target_speed")
@@ -46,7 +46,7 @@ class DynamicTrapController:
     def vision_callback(self, message):
         pose = BoardPose()
         x = message.x
-        xdot = message.x - message.x2
+        xdot = message.x - message.x2 #needs to be divided by time step / get this value from CV
         y = message.y
         ydot = message.y - message.y2
 
