@@ -163,6 +163,8 @@ include_directories(
    nodes/bamboo_desiredposition
    nodes/balance
    nodes/joint_controller_interface
+   nodes/dynamic_trap_controller
+   nodes/test_controller
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 

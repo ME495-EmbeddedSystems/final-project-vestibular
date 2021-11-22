@@ -3,12 +3,12 @@
         <arg name="launch_franka_control" default="false"/>
     </include>
 
-    <node name="realsense_node" pkg="balance_board" type="CV_test"/>
-    <node name="joint_controller_interface" pkg="balance_board" type="joint_controller_interface">
-        <rosparam command="load" file="$(find balance_board)/config/interface_params.yaml"/>
-    </node>
 
-    <node name="dynamic_trap_controller" pkg="balance_board" type="dynamic_trap_controller">
+    <!-- <node name="joint_controller_interface" pkg="balance_board" type="joint_controller_interface">
+        <rosparam command="load" file="$(find balance_board)/config/interface_params.yaml"/>
+    </node> -->
+
+    <node name="test_controller" pkg="balance_board" type="test_controller">
         <rosparam command="load" file="$(find balance_board)/config/dtc_params.yaml"/>
     </node>
 

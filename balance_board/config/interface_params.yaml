@@ -1,3 +1,3 @@
-max_angle_increment: 0.01 #(rad)
-joint_update_frequency: 100 #(Hz)
+max_angle_increment: 0.0001 #(rad)
+joint_update_frequency: 50 #(Hz)
  
