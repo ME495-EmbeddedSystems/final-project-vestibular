@@ -1,0 +1,8 @@
+{
+    "python.autoComplete.extraPaths": [
+        "/home/devbhura/fall_2021/Emb_Sys_Robotics/final_project/ws/devel/lib/python3/dist-packages",
+        "/home/devbhura/custom_ws_proj/devel_isolated/apriltag_ros/lib/python3/dist-packages",
+        "/home/devbhura/custom_ws/devel/lib/python3/dist-packages",
+        "/opt/ros/noetic/lib/python3/dist-packages"
+    ]
+}
