@@ -177,7 +177,7 @@ class balance:
         mg = self.move_group
         joint_val = mg.get_current_joint_values()
         home = [0 ,-pi/2,pi/2, -pi/2, -pi/2, pi/2, pi/4]
-        dbalance_home = {'panda_joint1':0,'panda_joint2': -pi/2,'panda_joint3':pi/2,'panda_joint4': -pi/2, 'panda_joint5':-pi/2, 'panda_joint6':pi/2,'panda_joint7': pi/4}
+        dbalance_home = {'panda_joint1':0,'panda_joint2': -pi/2,'panda_joint3':pi/2,'panda_joint4': -pi/2, 'panda_joint5':-pi/2, 'panda_joint6':pi/2+0.02,'panda_joint7': pi/4}
 
         mg.set_joint_value_target(dbalance_home)
         mg.go(wait='true')
@@ -197,7 +197,7 @@ class balance:
 
 
 
-            theta1_offset = ((self.ball_y-20)-self.y_way) *0.00025
+            theta1_offset = ((self.ball_y)-self.y_way) *0.00025
             theta2_offset = -(self.ball_x-self.x_way) *0.00025
 
             distx = self.ball_x-self.x_way
@@ -225,7 +225,7 @@ class balance:
             js_point = JointTrajectoryPoint()
 
 
-            js_point.positions = [0,-pi/2,pi/2, -pi/2, -pi/2+theta2_offset, pi/2+theta1_offset, pi/4]
+            js_point.positions = [0,-pi/2,pi/2, -pi/2, -pi/2+theta2_offset, pi/2+0.02+theta1_offset, pi/4]
 
 
             ####################################3
@@ -258,7 +258,7 @@ class balance:
             
             try:
                 if err1>0.01 or err2>0.01:
-                    print(f"fuck you {err1}")
+                    print(f"large error {err1}")
                     
                     print(theta1_offset)
                     print(theta2_offset)

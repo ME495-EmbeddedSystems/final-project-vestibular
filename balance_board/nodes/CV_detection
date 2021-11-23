@@ -30,7 +30,7 @@ class Comp_vis:
         self._bridge = CvBridge()
 
         self.r=rospy.Rate(60)
-        self.pose_pub = rospy.Publisher("/ball_pose",Ball_pose, queue_size=10)
+        self.pose_pub = rospy.Publisher("/ball_pose",Ball_pose, queue_size=1)
         self.color_subscribe = rospy.Subscriber('/camera/color/image_raw',Image,self.color_callback)
         self.depth_subscribe = rospy.Subscriber('/camera/depth/image_rect_raw',Image,self.depth_callback)
         
