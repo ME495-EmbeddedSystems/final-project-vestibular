@@ -67,10 +67,12 @@ class JointControllerInterface:
         else:
             y_scale = 1
 
-        scale = max([x_scale, y_scale, 1])
+        # scale = min([x_scale, y_scale, 1])
+        x_scale = min([x_scale, 1])
+        y_scale = min([y_scale, 1])
 
-        js_point.positions[4] = joint_val[4] + scale*x_inc
-        js_point.positions[5] = joint_val[5] + scale*y_inc
+        js_point.positions[4] = joint_val[4] + x_scale*x_inc
+        js_point.positions[5] = joint_val[5] + y_scale*y_inc
 
 
 
