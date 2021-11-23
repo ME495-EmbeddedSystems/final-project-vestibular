@@ -32,6 +32,7 @@ from control_msgs.msg import JointTrajectoryControllerState
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 from balance_board.msg import Ball_pose
+# from balance_board.msg import BoardPose
 
 
 
@@ -45,23 +46,33 @@ class balance:
         OUTPUTS:
             none
         '''
-        
+        self.amp = .05
         self.time=rospy.get_time()
         self.robot = moveit_commander.RobotCommander()
         self.scene = moveit_commander.PlanningSceneInterface()
         self.move_group = moveit_commander.MoveGroupCommander("panda_arm") 
         self.grip_group = moveit_commander.MoveGroupCommander("hand")
 
-        self.pose_sub = Subscriber("/ball_pose",Ball_pose,self.pose_callback)
-        self.fr_pub = rospy.Publisher("position_joint_trajectory_controller/command",JointTrajectory,queue_size = 10)
+        self.pose_sub = rospy.Subscriber("/ball_pose",Ball_pose,self.pose_callback)
+        self.fr_pub = rospy.Publisher("position_joint_trajectory_controller/command",JointTrajectory,queue_size = 1)
+        # self.interf = rospy.Publisher("angle_updates", BoardPose, queue_size = 1)
+
+        # self.__test_jbalance = rospy.Service("test_jbal",Empty,self.j_balancer)
+        self.__test_dbalance = rospy.Service("dbalance",Empty,self.d_balancer)
+
+        self.__destroy = rospy.Service("destroy",Empty,self.inner_serve)#######################
 
         self.__home = rospy.Service("go_home",Empty,self.go_home)
         self.__test_loop = rospy.Service("loop_on",Empty,self.loop_callback)
         self.__loop_off = rospy.Service("loop_off",Empty,self.loop_off)
 
-        self.joint_home = {'panda_joint1':0,'panda_joint2': -pi/2,'panda_joint3':pi/2,'panda_joint4': -pi/2, 'panda_joint5':-pi/2, 'panda_joint6':pi/2,'panda_joint7': -pi/4}
+        self.joint_home = {'panda_joint1':0,'panda_joint2': -pi/2,'panda_joint3':pi/2,'panda_joint4': -pi/2, 'panda_joint5':-pi/2, 'panda_joint6':pi/2+0.02,'panda_joint7': pi/4}
 
         self.loop_on =0
+
+        self.circle_thresh=0
+        self.stop_scale = 0
+
     
     def pose_callback(self,data):
         self.ball_x = data.x
@@ -79,17 +90,249 @@ class balance:
         self.x_way = data.x_way
         self.y_way = data.y_way
         self.z_way = data.z_way
-        
     
+    def inner_serve(self,req):
+        # self.circle_thresh = data.threshold
+        # self.stop_scale = data.stopscale
+        self.circle_thresh = 40
+        self.stop_scale = 0.00001
+
+        rate = rospy.Rate(100)
+        self.loop_on = 1
+        error1_list = []
+        error2_list = []
+        index_fy = 0
+
+        
+        
+        while self.loop_on == 1:
+            theta1_offset = ((self.ball_y-20)-self.y_way) *0.00025
+            theta2_offset = -(self.ball_x-self.x_way) *0.00025
+            new_js = JointTrajectory()
+            new_js.joint_names = ['panda_joint1','panda_joint2','panda_joint3','panda_joint4', 'panda_joint5', 'panda_joint6','panda_joint7']
+            
+            js_point = JointTrajectoryPoint()
+            self.x_vel = (self.ball_x-self.ball_x2)/0.01
+            self.y_vel = (self.ball_y-self.ball_y2)/0.01
+
+            print(f"xvel = {self.x_vel} y_vel = {self.y_vel}")
+
+
+            inner_offset2 = self.stop_scale * self.x_vel
+            inner_offset1 = self.stop_scale * self.y_vel
+
+            
+
+            js_point.positions = [0,-pi/2,pi/2, -pi/2, -pi/2+inner_offset2, pi/2+inner_offset1, pi/4]
+            
+            js_point.time_from_start.nsecs = 10000000
+            new_js.points = [js_point]
+
+            self.fr_pub.publish(new_js)
+
+            rate.sleep()
+
+            try:
+                err1 = prev1 - theta1_offset
+                err2 = prev2 - theta2_offset
+            except:
+                print("pass")
+            
+            try:
+                if err1>0.01 or err2>0.01:
+                    print(f"fuck you {err1}")
+                    
+                    print(theta1_offset)
+                    print(theta2_offset)
+                    print(prev1)
+                    print(prev2)
+                    error1_list.append(err1)
+                    error2_list.append(err2)
+                    index_fy +=1
+                    print(f"index = {index_fy}")
+
+                    # self.loop_on=0
+            except:
+                print("except2")
+
+            prev1 = theta1_offset
+            prev2 = theta2_offset
+
+            
+
+        print("loop end")
+        print(f"error1 = {error1_list}")
+        print(f"error2 = {error2_list}")
+
+
+        return EmptyResponse()
+
+        
+
+
+
+        
+    def d_balancer(self,req):
+        #Checking for safety
+        mg = self.move_group
+        joint_val = mg.get_current_joint_values()
+        home = [0 ,-pi/2,pi/2, -pi/2, -pi/2, pi/2, pi/4]
+        dbalance_home = {'panda_joint1':0,'panda_joint2': -pi/2,'panda_joint3':pi/2,'panda_joint4': -pi/2, 'panda_joint5':-pi/2, 'panda_joint6':pi/2+0.02,'panda_joint7': pi/4}
+
+        mg.set_joint_value_target(dbalance_home)
+        mg.go(wait='true')
+
+        error1_list = []
+        error2_list = []
+        index_fy = 0
+
+
+
+        #timing
+        rate = rospy.Rate(100)
+        self.loop_on = 1
+        
+        
+        while self.loop_on == 1:
+
+
+
+            theta1_offset = ((self.ball_y)-self.y_way) *0.00025
+            theta2_offset = -(self.ball_x-self.x_way) *0.00025
+
+            distx = self.ball_x-self.x_way
+            disty = self.ball_y-self.y_way
+
+            ##### new logic
+            self.x_vel = (self.ball_x-self.ball_x2)/0.01
+            self.y_vel = (self.ball_y-self.ball_y2)/0.01
+
+            inner_offset2 = self.stop_scale * self.x_vel
+            inner_offset1 = self.stop_scale * self.y_vel
+            #################
+
+
+            if abs(theta1_offset) > pi/8 or abs(theta2_offset) > pi/8: ### Safety kill
+                self.loop_on = 0 
+
+            
+            # if abs(distx) > 200 or abs(disty) > 200:
+            #     self.loop_on = 0
+
+            new_js = JointTrajectory()
+            new_js.joint_names = ['panda_joint1','panda_joint2','panda_joint3','panda_joint4', 'panda_joint5', 'panda_joint6','panda_joint7']
+            
+            js_point = JointTrajectoryPoint()
+
+
+            js_point.positions = [0,-pi/2,pi/2, -pi/2, -pi/2+theta2_offset, pi/2+0.02+theta1_offset, pi/4]
+
+
+            ####################################3
+            if abs(distx)<self.circle_thresh:
+                js_point.positions[4] = -pi/2+inner_offset2
+
+            if abs(disty)<self.circle_thresh:
+                js_point.positions[5] = pi/2+inner_offset1
+            ##############################333
+
+            js_point.time_from_start.nsecs = 10000000
+            new_js.points = [js_point]
+
+            
+            self.fr_pub.publish(new_js)
+            # new_pose = BoardPose()
+            # new_pose.theta_x = theta2_offset
+            # new_pose.theta_y = theta1_offset
+            # self.interf.publish(new_pose)
+
+            
+
+            rate.sleep()
+
+            try:
+                err1 = prev1 - theta1_offset
+                err2 = prev2 - theta2_offset
+            except:
+                print("pass")
+            
+            try:
+                if err1>0.01 or err2>0.01:
+                    print(f"large error {err1}")
+                    
+                    print(theta1_offset)
+                    print(theta2_offset)
+                    print(prev1)
+                    print(prev2)
+                    error1_list.append(err1)
+                    error2_list.append(err2)
+                    index_fy +=1
+                    print(f"index = {index_fy}")
+
+                    # self.loop_on=0
+            except:
+                print("except2")
+
+            prev1 = theta1_offset
+            prev2 = theta2_offset
+
+            
+
+        print("loop end")
+        print(f"error1 = {error1_list}")
+        print(f"error2 = {error2_list}")
+
+
+        return EmptyResponse()
+        
+        
+
+
+
+
+
+    # def j_balancer(self,req):
+    #     self.xdot_max = 1 # the threshold velocity we set
+    #     self.xdot_threshold = 0.1 
+    #     self.x_decel_zone = 0.1
+    #     self.x_target_threshold = 0.02
+    #     self.x_cur  =  # cureent postion from camera
+    #     self.xdot_cur = 0 # current velocity (rest)
+    #     self.theta_cur =  # current angle from robot 
+    #     self.x_target = # target position
+    #     self.msg_pub = rospy.Publisher("", Twist, queue_size = 10)  
+    #     self.duration = 0.1 # rate should match the carmera frame
+    #     rospy.Timer(rospy.Duration(self.duration), self.timer_callback)
+
+    # def timer_callback(self, event):
+    #     xddot_cur = 9.81 * np.sin(self.theta_cur)
+    #     self.xdot_cur += xddot_cur * self.duration
+    #     if abs(self.x_cur - self.x_target) > self.x_decel_zone:
+    #         if self.xdot_cur - self.xdot_max > self.xdot_threshold:
+    #             # control the theta to be the opposite direction, might times the gain(proportion) in this control
+    #         elif abs(self.xdot_cur - self.xdot_max) < self.xdot_threshold:
+    #             # control the theta to be zero (flat)      
+    #         elif self.xdot_max - self.xdot_cur > self.xdot_threshold:
+    #             # hold the theta constantly 
+    #     else:
+    #         if abs(self.x_cur - self.x_target) > self.x_target_threshold:
+    #             # control the theta to be the opposite direction, might times the gain(proportion) in this control
+    #         else:
+    #             # control the theta to be zero
+
+
+
     def loop_off(self,req):
         self.loop_on =0
+        self.circle_thresh = 0
+        self.stop_scale = 0
         return EmptyResponse()
 
     def loop_callback(self,req):
         #Checking for safety
         mg = self.move_group
         joint_val = mg.get_current_joint_values()
-        home = [0 -pi/2,pi/2, -pi/2, -pi/2, pi/2, -pi/4]
+        home = [0 -pi/2,pi/2, -pi/2, -pi/2, pi/2, pi/4]
 
         mg.set_joint_value_target(self.joint_home)
         mg.go(wait='true')
@@ -99,28 +342,35 @@ class balance:
         rate = rospy.Rate(100)
         t = 0
         
-        if np.allclose(home,joint_val,):
-            self.loop_on=1
-            print("loop start")
-        else:
-            self.loop_on=0
-            print("Robot not in position")
+        self.loop_on =1
+        # if np.allclose(home,joint_val,):
+        #     self.loop_on=1
+        #     print("loop start")
+        # else:
+        #     self.loop_on=0
+        #     print("Robot not in position")
         
         while self.loop_on == 1:
-            
-            change = np.sin(t*pi/4)*0.5
+            # if t <.2:
+            #     change = np.sin(t*pi/4)*t
+            #     change2 = np.cos(t*pi/4)*t
+            # else:
+            #     change = np.sin(t*pi/4)*0.2
+            #     change2 = np.cos(t*pi/4)*0.2
+            change = np.sin(t*pi/4)*self.amp
+            change2 = np.cos(t*pi/4)*self.amp
 
             new_js = JointTrajectory()
             new_js.joint_names = ['panda_joint1','panda_joint2','panda_joint3','panda_joint4', 'panda_joint5', 'panda_joint6','panda_joint7']
             
             js_point = JointTrajectoryPoint()
-            js_point.positions = [0,-pi/2,pi/2, -pi/2, -pi/2+change, pi/2+change, -pi/4]
+            js_point.positions = [0,-pi/2,pi/2, -pi/2, -pi/2+change, pi/2, pi/4]
             js_point.time_from_start.nsecs = 10000000
             new_js.points = [js_point]
             
             self.fr_pub.publish(new_js)
 
-            t = t + 0.01
+            t = t + 0.06
             rate.sleep()
 
         print("loop end")

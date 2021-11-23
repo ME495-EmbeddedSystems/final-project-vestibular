@@ -1,0 +1,68 @@
+#!/usr/bin/env
+'''
+use control theta to control xddot, to get the desired velocity (both in acceleration zone constant zone and deceleration zone)
+
+PUBLISHERS:
+  + 
+SUBSCRIBERS
+  +  
+SERVICES:
+  none
+PARAMETERS
+  + none
+'''
+#imports
+import rospy
+from std_srvs.srv import Empty, EmptyResponse
+from geometry_msgs.msg import Twist, Vector3
+from nav_msgs.msg import Odometry
+from tf_conversions import transformations
+from balance_board.msg import Ball_pose
+from balance_board.msg import BoardPose
+import numpy as np
+import math
+# import geometry_msgs.msg
+
+class TestController:
+    def __init__(self):
+        '''
+        The initiation function of the flip. Initiates subscribers and variables
+        INPUTS:
+            none
+        OUTPUTS:
+            none
+        '''
+
+        self.angle_pub = rospy.Publisher('angle_updates', BoardPose, queue_size=10)
+        self.timer = rospy.Timer(rospy.Duration(1/30), self.timer_callback)
+
+        self.trajectory_x = np.linspace(0, 2*math.pi, 300)
+        self.trajectory_y = np.linspace(0, 2*math.pi, 300)
+
+        amp = 0.1
+
+        self.trajectory_x = amp*np.sin(self.trajectory_x)
+        self.trajectory_y = amp*np.cos(self.trajectory_y)
+        
+        self.index = 0
+        
+    def timer_callback(self, message):
+        pose = BoardPose()
+        pose.theta_x = self.trajectory_x[self.index]
+        pose.theta_y = self.trajectory_y[self.index]
+        self.index += 1
+        if self.index == len(self.trajectory_x):
+            self.index = 0
+        self.angle_pub.publish(pose)
+        
+def main():
+    
+    rospy.init_node('test_controller', anonymous=True)
+    controller = TestController()
+    rospy.spin()
+
+if __name__ == '__main__':
+    try:
+        main()
+    except rospy.ROSInterruptException:
+        pass

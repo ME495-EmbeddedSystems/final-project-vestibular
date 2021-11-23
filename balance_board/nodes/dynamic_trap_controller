@@ -1,0 +1,112 @@
+#!/usr/bin/env python3
+'''
+use control theta to control xddot, to get the desired velocity (both in acceleration zone constant zone and deceleration zone)
+
+PUBLISHERS:
+  + 
+SUBSCRIBERS
+  +  
+SERVICES:
+  none
+PARAMETERS
+  + none
+'''
+#imports
+import rospy
+from std_srvs.srv import Empty, EmptyResponse
+from geometry_msgs.msg import Twist, Vector3
+from nav_msgs.msg import Odometry
+from tf_conversions import transformations
+from balance_board.msg import Ball_pose
+from balance_board.msg import BoardPose
+import numpy as np
+import math
+# import geometry_msgs.msg
+
+class DynamicTrapController:
+    def __init__(self):
+        '''
+        The initiation function of the flip. Initiates subscribers and variables
+        INPUTS:
+            none
+        OUTPUTS:
+            none
+        '''
+
+        self.angle_pub = rospy.Publisher('angle_updates', BoardPose, queue_size=10)
+        self.vision_system = rospy.Subscriber("/ball_pose", Ball_pose, self.vision_callback)
+
+        self.vel_targ = rospy.get_param("~target_speed")
+        self.decel_targ = rospy.get_param("~target_decel")
+        self.abs_dist_thresh = rospy.get_param("~absolute_distance_threshold")
+        self.vel_kp = rospy.get_param("~vel_kp")
+        self.pos_kp = rospy.get_param("~pos_kp")
+        self.pos_kd = rospy.get_param("~pos_kd")
+        
+    def vision_callback_deprecated(self, message):
+        pose = BoardPose()
+        x = message.x
+        xdot = message.x - message.x2
+        y = message.y
+        ydot = message.y - message.y2
+
+        x_err = message.x_way - x
+        y_err = message.y_way - y
+
+        dist_err = math.sqrt(x_err**2 + y_err**2)
+
+        dist_thresh = ((xdot**2 + ydot**2) / 2*self.decel_targ) + self.abs_dist_thresh
+
+        if dist_err > dist_thresh:
+
+            xdot_d = self.vel_targ * x_err / dist_err
+            ydot_d = self.vel_targ * y_err / dist_err
+            
+            pose.theta_x = self.vel_kp*(xdot_d - xdot)
+            pose.theta_y = self.vel_kp*(ydot_d - ydot)
+            
+        else:
+            pose.theta_x = self.pos_kp * x_err - self.pos_kd * xdot
+            pose.theta_y = self.pos_kp * y_err - self.pos_kd * ydot
+
+        self.angle_pub.publish(pose)
+
+    def vision_callback(self, message):
+        pose = BoardPose()
+        x = message.x
+        xdot = message.x - message.x2
+        y = message.y
+        ydot = message.y - message.y2
+
+        x_err = message.x_way - x
+        y_err = message.y_way - y
+
+        dist_err = math.sqrt(x_err**2 + y_err**2)
+
+        dist_thresh = ((xdot**2 + ydot**2) / 2*self.decel_targ) + self.abs_dist_thresh
+
+        if True:
+
+            xdot_d = self.vel_targ * x_err / dist_err
+            ydot_d = self.vel_targ * y_err / dist_err
+            
+            pose.theta_x = -self.vel_kp*x_err
+            pose.theta_y = -self.vel_kp*y_err
+            
+        else:
+            pose.theta_x = self.pos_kp * x_err - self.pos_kd * xdot
+            pose.theta_y = self.pos_kp * y_err - self.pos_kd * ydot
+
+        self.angle_pub.publish(pose)
+        
+def main():
+    
+    rospy.init_node('controller', anonymous=True)
+    controller = DynamicTrapController()
+    rospy.spin()
+
+if __name__ == '__main__':
+    try:
+        main()
+    except rospy.ROSInterruptException:
+        pass
