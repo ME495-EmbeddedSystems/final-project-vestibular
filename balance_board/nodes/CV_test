@@ -227,13 +227,13 @@ class Comp_vis:
                 way_mask = cv2.inRange(hsv, self.lower_bluemark, self.upper_bluemark)
                 # Bitwise-AND mask and original image
                 res = cv2.bitwise_and(bg_removed,bg_removed, mask= mask)
-                cv2.imshow('frame',bg_removed)
-                cv2.imshow('mask',mask)
-                cv2.imshow('res',res)
+                # cv2.imshow('frame',bg_removed)
+                # cv2.imshow('mask',mask)
+                # cv2.imshow('res',res)
                 print("checkpoint 2")
                 ##
                 res2 = cv2.bitwise_and(bg_removed,bg_removed, mask= way_mask)
-                cv2.imshow('waypoint',res2)
+                # cv2.imshow('waypoint',res2)
                 print("checkpoint 3")
                 # print(frame_threshold)
                 cv2.imshow(self.window_detection_name, frame_threshold)
