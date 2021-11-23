@@ -32,7 +32,7 @@ from control_msgs.msg import JointTrajectoryControllerState
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 from balance_board.msg import Ball_pose
-# from balance_board.msg import BoardPose
+from balance_board.msg import BoardPose
 
 
 
@@ -54,8 +54,8 @@ class balance:
         self.grip_group = moveit_commander.MoveGroupCommander("hand")
 
         self.pose_sub = rospy.Subscriber("/ball_pose",Ball_pose,self.pose_callback)
-        self.fr_pub = rospy.Publisher("position_joint_trajectory_controller/command",JointTrajectory,queue_size = 1)
-        # self.interf = rospy.Publisher("angle_updates", BoardPose, queue_size = 1)
+        # self.fr_pub = rospy.Publisher("position_joint_trajectory_controller/command",JointTrajectory,queue_size = 1)
+        self.interf = rospy.Publisher("angle_updates", BoardPose, queue_size = 1)
 
         # self.__test_jbalance = rospy.Service("test_jbal",Empty,self.j_balancer)
         self.__test_dbalance = rospy.Service("dbalance",Empty,self.d_balancer)
@@ -94,8 +94,8 @@ class balance:
     def inner_serve(self,req):
         # self.circle_thresh = data.threshold
         # self.stop_scale = data.stopscale
-        self.circle_thresh = 40
-        self.stop_scale = 0.00001
+        self.circle_thresh = 30
+        self.stop_scale = 0.025
 
         rate = rospy.Rate(100)
         self.loop_on = 1
@@ -106,14 +106,20 @@ class balance:
         
         
         while self.loop_on == 1:
-            theta1_offset = ((self.ball_y-20)-self.y_way) *0.00025
+            theta1_offset = ((self.ball_y)-self.y_way) *0.00025
             theta2_offset = -(self.ball_x-self.x_way) *0.00025
+            
+            distx = self.ball_x-self.x_way
+            disty = self.ball_y-self.y_way
+            
+            print(f" distx = {distx} disty = {disty}")
+            
             new_js = JointTrajectory()
             new_js.joint_names = ['panda_joint1','panda_joint2','panda_joint3','panda_joint4', 'panda_joint5', 'panda_joint6','panda_joint7']
             
             js_point = JointTrajectoryPoint()
-            self.x_vel = (self.ball_x-self.ball_x2)/0.01
-            self.y_vel = (self.ball_y-self.ball_y2)/0.01
+            self.x_vel = (self.ball_x-self.ball_x2)
+            self.y_vel = (self.ball_y-self.ball_y2)
 
             print(f"xvel = {self.x_vel} y_vel = {self.y_vel}")
 
@@ -127,11 +133,28 @@ class balance:
             
             js_point.time_from_start.nsecs = 10000000
             new_js.points = [js_point]
+            
+            new_pose = BoardPose()
+            
+            if (abs(self.x_vel) < 1) and (abs(self.y_vel) < 1):
+                new_pose.theta_x = 0
+                new_pose.theta_y = 0.02
+            elif (abs(distx) < self.circle_thresh) and (abs(disty) < self.circle_thresh) :
+                new_pose.theta_x =  -inner_offset2 
+                new_pose.theta_y =  inner_offset1 +0.02 
+            else:
+                new_pose.theta_x =  theta2_offset
+                new_pose.theta_y =  theta1_offset +0.02 
+                
+            self.interf.publish(new_pose)
 
-            self.fr_pub.publish(new_js)
+
+            # self.fr_pub.publish(new_js)
 
             rate.sleep()
 
+            
+            
             try:
                 err1 = prev1 - theta1_offset
                 err2 = prev2 - theta2_offset
@@ -240,11 +263,11 @@ class balance:
             new_js.points = [js_point]
 
             
-            self.fr_pub.publish(new_js)
-            # new_pose = BoardPose()
-            # new_pose.theta_x = theta2_offset
-            # new_pose.theta_y = theta1_offset
-            # self.interf.publish(new_pose)
+            # self.fr_pub.publish(new_js)
+            new_pose = BoardPose()
+            new_pose.theta_x = theta2_offset
+            new_pose.theta_y = theta1_offset
+            self.interf.publish(new_pose)
 
             
 
