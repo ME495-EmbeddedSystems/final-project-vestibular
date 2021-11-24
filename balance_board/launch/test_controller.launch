@@ -4,9 +4,9 @@
     </include>
 
 
-    <!-- <node name="joint_controller_interface" pkg="balance_board" type="joint_controller_interface">
+    <node name="joint_controller_interface" pkg="balance_board" type="joint_controller_interface">
         <rosparam command="load" file="$(find balance_board)/config/interface_params.yaml"/>
-    </node> -->
+    </node>
 
     <node name="test_controller" pkg="balance_board" type="test_controller">
         <rosparam command="load" file="$(find balance_board)/config/dtc_params.yaml"/>

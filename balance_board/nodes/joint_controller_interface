@@ -7,7 +7,6 @@ in order to only publish new values when messages are sent to "angle_updates" - 
 
 import rospy
 import moveit_commander
-# from balance_board.msg import BoardPose
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from math import pi
 from std_srvs.srv import Empty, EmptyResponse
@@ -72,7 +71,7 @@ class JointControllerInterface:
         else:
             y_scale = 1
 
-        scale = max([x_scale, y_scale, 1])
+        scale = min([x_scale, y_scale, 1])
 
         js_point.positions[4] = joint_val[4] + scale*x_inc
         js_point.positions[5] = joint_val[5] + scale*y_inc
