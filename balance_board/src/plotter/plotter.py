@@ -4,30 +4,46 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 class Plotter:
+
+  class Line:
     def __init__(self):
-      self.lock = threading.Lock()
-      self.t_start = time.time()
-      self.data = {}
-      self.tstamp = {}
+      self.times = []
+      self.data = []
 
+  class Plot:
+    def __init__(self):
+      self.lines = {}
 
-    def log(self, header, value):
-      t = time.time() - self.t_start
-      with self.lock:
-        if header in self.data.keys():
-          self.data[header].append(value)
-          self.tstamp[header].append(t)
-        else:
-          self.data[header] = [value]
-          self.tstamp[header] = [t] 
-      
-    def plot(self):
+    def add(self, line, data, t):
+
+      if not line in self.lines.keys():
+        self.lines[line] = Plotter.Line()
+
+      self.lines[line].times.append(t)
+      self.lines[line].data.append(data)
+
+  def __init__(self):
+    self.t_start = time.time()
+    self.plots = {}
+
+  def log(self, plot, line, data):
+    t = time.time() - self.t_start
+    if not plot in self.plots.keys():
+      self.plots[plot] = Plotter.Plot()
+    self.plots[plot].add(line, data, t)
+
+  def plot(self):
+    for plot in self.plots.keys():
       fig, ax = plt.subplots()
-      for header in self.data.keys():
-        ax.plot(np.array(self.tstamp[header]), np.array(self.data[header]))
-      ax.legend(self.data.keys())
-      plt.show()
+      for line in self.plots[plot].lines.keys():
+        ax.plot(
+          np.array(self.plots[plot].lines[line].times),
+          np.array(self.plots[plot].lines[line].data)
+        )
+      ax.legend(self.plots[plot].lines.keys())
+      plt.title(plot)
+    plt.show()
 
-    def reset(self, msg):
-      self.data = {}
-      self.t_start = time.time()
+  def reset(self, msg):
+    self.plots = {}
+    self.t_start = time.time()
