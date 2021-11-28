@@ -19,6 +19,7 @@ from nav_msgs.msg import Odometry
 from tf_conversions import transformations
 from balance_board.msg import Ball_pose
 from balance_board.msg import BoardPose
+from balance_board.msg import PlotPoint
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 import numpy as np
 import math
@@ -35,6 +36,7 @@ class TestController:
         '''
 
         self.angle_pub = rospy.Publisher('angle_updates', BoardPose, queue_size=10)
+        self.plotter = rospy.Publisher('plot_log', PlotPoint, queue_size=10)
         # self.direct_pub = rospy.Publisher('/position_joint_trajectory_controller/command', JointTrajectory, queue_size=1)
         # self.move = rospy.Service('move', Empty, self.servcallback)
         self.timer = rospy.Timer(rospy.Duration(1/100), self.timer_callback)
@@ -54,6 +56,8 @@ class TestController:
     #     return EmptyResponse()
 
     def timer_callback(self, req):
+        x_point = PlotPoint()
+        y_point = PlotPoint()
         pose = BoardPose()
         pose.theta_x = self.trajectory_x[self.index]
         pose.theta_y = self.trajectory_y[self.index]
@@ -61,6 +65,19 @@ class TestController:
         if self.index == len(self.trajectory_x):
             self.index = 0
         self.angle_pub.publish(pose)
+
+        x_point.value = self.trajectory_x[self.index]
+        y_point.value = self.trajectory_y[self.index]
+
+        x_point.plot = "Test Controller"
+        y_point.plot = "Test Controller"
+
+        x_point.line = "X"
+        y_point.line = "Y"
+
+        self.plotter.publish(x_point)
+        self.plotter.publish(y_point)
+        
 
         # mtp = JointTrajectory()
         # mtp_points = JointTrajectoryPoint()

@@ -44,6 +44,6 @@ class Plotter:
       plt.title(plot)
     plt.show()
 
-  def reset(self, msg):
+  def reset(self):
     self.plots = {}
     self.t_start = time.time()
