@@ -10,7 +10,9 @@ class BoardPid:
         derivative_window=1,    # number of previous calls to average error change rate over
         timeout=None,           # optionally sets a timeout which resets integral error if exceeded
         int_max=None,           # optionally sets a maximum integral error, to prevent wind-up
-        out_max=None            # optionally sets a maximum controller output
+        out_max=None,            # optionally sets a maximum controller output
+        in_max=None,
+        halt_out=0
     ):
 
         # sets PID coefficients
@@ -27,10 +29,17 @@ class BoardPid:
         self.timeout=timeout
         self.int_max = int_max
         self.out_max = out_max
+        self.in_max = in_max
+        self.halt_out = halt_out
 
     def get(self, val):
 
-        # Gets new output based on current sensor value
+        # Gets new output based on current sensor 
+
+        # Halts if position is out of range
+        if not self.in_max is None:
+            if val > self.in_max or val < -self.in_max:
+                return self.halt_out
 
         # get timestep since last controller call
         dt = time.time() - self.last_time 
