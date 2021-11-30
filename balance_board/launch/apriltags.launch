@@ -12,6 +12,6 @@
     
     </include>
 
-    <node name="rviz" pkg="rviz" type="rviz"/>
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find balance_board)/config/apriltag_recog.rviz"/>
 
 </launch> 
