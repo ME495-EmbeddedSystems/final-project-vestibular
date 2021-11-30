@@ -1,0 +1,108 @@
+#!/usr/bin/env python3
+'''
+use control theta to control xddot, to get the desired velocity (both in acceleration zone constant zone and deceleration zone)
+
+PUBLISHERS:
+  + 
+SUBSCRIBERS
+  +  
+SERVICES:
+  none
+PARAMETERS
+  + none
+'''
+#imports
+import rospy
+from balance_board.msg import BoardPose,Ball_pose, PlotPoint
+from board_pid import BoardPid
+# import geometry_msgs.msg
+
+class NestedPD:
+    def __init__(self):
+        '''
+        The initiation function of the flip. Initiates subscribers and variables
+        INPUTS:
+            none
+        OUTPUTS:
+            none
+        '''
+
+        self.angle_pub = rospy.Publisher('angle_updates', BoardPose, queue_size=10)
+        self.vision_system = rospy.Subscriber("/ball_pose", Ball_pose, self.vision_callback)
+
+        self.max_vel = rospy.get_param("~max_vel")
+        self.max_angle = rospy.get_param("~max_angle")
+        self.vel_kp = rospy.get_param("~vel_kp")
+        self.vel_kd = rospy.get_param("~vel_ki")
+        self.pos_kp = rospy.get_param("~pos_kp")
+        self.pos_kd = rospy.get_param("~pos_kd")
+        self.frames_smoothing = rospy.get_param("~frames_smoothing")
+
+        self.x_hist = [0]*self.frames_smoothing
+        self.y_hist = [0]*self.frames_smoothing
+
+        self.x_last = 0
+        self.y_last = 0
+
+        self.x_pos_pid = BoardPid(
+            kp=self.pos_kp,
+            kd=self.pos_kd,
+            out_max = self.max_vel
+        )
+
+        self.y_pos_pid = BoardPid(
+            kp=self.pos_kp,
+            kd=self.pos_kd,
+            out_max = self.max_vel
+        )
+
+        self.x_vel_pid = BoardPid(
+            kp=self.vel_kp,
+            kd=self.vel_kd,
+            out_max = self.max_angle
+        )
+
+        self.y_vel_pid = BoardPid(
+            kp=self.vel_kp,
+            kd=self.vel_kd,
+            out_max = self.max_angle
+        )
+        
+    def vision_callback(self, msg):
+        pose = BoardPose()
+        self.x_pos_pid.set_target(msg.x_way)
+        self.y_pos_pid.set_target(msg.y_way)
+
+        xdot = msg.x-self.x_last
+        self.x_hist.pop(-1)
+        self.x_hist.insert(0, xdot)
+        xdot = sum(self.x_hist)/len(self.x_hist)
+
+        ydot = msg.y-self.y_last
+        self.y_hist.pop(-1)
+        self.y_hist.insert(0, ydot)
+        xdot = sum(self.y_hist)/len(self.y_hist)
+
+        self.x_vel_pid.set_target(
+            self.x_pos_pid.get(msg.x)
+        )
+        self.y_vel_pid.set_target(
+            self.y_pos_pid.get(msg.y)
+        )
+
+        pose.theta_x = self.x_vel_pid.get(xdot)
+        pose.theta_y = self.y_vel_pid.get(ydot)
+
+        self.angle_pub.publish(pose)
+        
+def main():
+    
+    rospy.init_node('nested_pd_controller', anonymous=True)
+    controller = NestedPD()
+    rospy.spin()
+
+if __name__ == '__main__':
+    try:
+        main()
+    except rospy.ROSInterruptException:
+        pass

@@ -1,0 +1,100 @@
+#!/usr/bin/env python3
+'''
+use control theta to control xddot, to get the desired velocity (both in acceleration zone constant zone and deceleration zone)
+
+PUBLISHERS:
+  + 
+SUBSCRIBERS
+  +  
+SERVICES:
+  none
+PARAMETERS
+  + none
+'''
+#imports
+import rospy
+from balance_board.msg import BoardPose,Ball_pose, PlotPoint
+from balance_board.srv import Gains
+from board_pid import BoardPid
+# import geometry_msgs.msg
+
+class PD:
+    def __init__(self):
+        '''
+        The initiation function of the flip. Initiates subscribers and variables
+        INPUTS:
+            none
+        OUTPUTS:
+            none
+        '''
+
+        # inits publishers, subscribers services
+        self.angle_pub = rospy.Publisher('angle_updates', BoardPose, queue_size=10)
+        self.vision_system = rospy.Subscriber("/ball_pose", Ball_pose, self.vision_callback)
+        self.plotter = rospy.Publisher('plot_log', PlotPoint, queue_size=10)
+        self.set_gains = rospy.Service('set_gains', Gains, self.set_gains_callback)
+
+        self.pos_kp = 0.0005
+        self.pos_kd = 10
+        self.frames_smoothing = 1
+
+        self.x_pid = BoardPid(
+            kp=self.pos_kp,
+            kd=self.pos_kd,
+            derivative_window = self.frames_smoothing,
+            target=352
+        )
+
+        self.y_pid = BoardPid(
+            kp=self.pos_kp,
+            kd=self.pos_kd,
+            derivative_window = self.frames_smoothing,
+            target=223
+        )
+
+    def vision_callback(self, msg):
+        
+        # inits new board pose message
+        pose = BoardPose()
+
+        # gets new angle values for the board from PID objects
+        pose.theta_x = self.x_pid.get(msg.x)
+        pose.theta_y = -self.y_pid.get(msg.y)
+
+        # publishes new joint angles to the jci
+        self.angle_pub.publish(pose)
+
+
+        # set and publish plotting values
+        pp_x_way = PlotPoint(plot="x_control", line="targ", value=msg.x_way)
+        pp_y_way = PlotPoint(plot="y_control", line="targ", value=msg.y_way)
+
+        pp_x_actual = PlotPoint(plot="x_control", line="actual", value=msg.x)
+        pp_y_actual = PlotPoint(plot="y_control", line="actual", value=msg.y)
+
+        pp_x_command = PlotPoint(plot="x_control", line="command", value=pose.theta_x)
+        pp_y_command = PlotPoint(plot="y_control", line="command", value=pose.theta_y)    
+
+        self.plotter.publish(pp_x_way)
+        self.plotter.publish(pp_y_way)
+        self.plotter.publish(pp_x_actual)   
+        self.plotter.publish(pp_y_actual) 
+        self.plotter.publish(pp_x_command) 
+        self.plotter.publish(pp_y_command) 
+    
+    def set_gains_callback(self, msg):
+        self.x_pid.set_gains(kp=msg.kp, ki= msg.ki, kd=msg.kd)
+        self.y_pid.set_gains(kp=msg.kp, ki= msg.ki, kd=msg.kd)
+        return 0
+
+def main():
+    
+    rospy.init_node('nested_pd_controller', anonymous=True)
+    controller = PD()
+    rospy.spin()
+
+if __name__ == '__main__':
+    try:
+        main()
+    except rospy.ROSInterruptException:
+        pass
