@@ -28,6 +28,7 @@ class PD:
             none
         '''
 
+        # inits publishers, subscribers services
         self.angle_pub = rospy.Publisher('angle_updates', BoardPose, queue_size=10)
         self.vision_system = rospy.Subscriber("/ball_pose", Ball_pose, self.vision_callback)
         self.plotter = rospy.Publisher('plot_log', PlotPoint, queue_size=10)
@@ -53,17 +54,18 @@ class PD:
 
     def vision_callback(self, msg):
         
+        # inits new board pose message
         pose = BoardPose()
-        # self.x_pid.set_target(msg.x_way)
-        # self.y_pid.set_target(msg.y_way)
 
+        # gets new angle values for the board from PID objects
         pose.theta_x = self.x_pid.get(msg.x)
         pose.theta_y = -self.y_pid.get(msg.y)
 
+        # publishes new joint angles to the jci
         self.angle_pub.publish(pose)
 
-        #publish plotting values
 
+        # set and publish plotting values
         pp_x_way = PlotPoint(plot="x_control", line="targ", value=msg.x_way)
         pp_y_way = PlotPoint(plot="y_control", line="targ", value=msg.y_way)
 
