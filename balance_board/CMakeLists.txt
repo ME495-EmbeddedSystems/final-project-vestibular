@@ -18,7 +18,7 @@ message_generation
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
-# catkin_python_setup()
+catkin_python_setup()
 
 ################################################
 ## Declare ROS messages, services and actions ##
@@ -49,16 +49,17 @@ add_message_files(
    FILES
    Ball_pose.msg
    BoardPose.msg
+   PlotPoint.msg
 #   Message1.msg
 #   Message2.msg
 )
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
+add_service_files(
+ FILES
+ Gains.srv
 #   Service2.srv
-# )
+)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -165,6 +166,7 @@ include_directories(
    nodes/joint_controller_interface
    nodes/dynamic_trap_controller
    nodes/test_controller
+   nodes/pd_controller
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 

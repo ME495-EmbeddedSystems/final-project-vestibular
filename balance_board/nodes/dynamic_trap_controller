@@ -46,7 +46,7 @@ class DynamicTrapController:
     def vision_callback_deprecated(self, message):
         pose = BoardPose()
         x = message.x
-        xdot = message.x - message.x2
+        xdot = message.x - message.x2 #needs to be divided by time step / get this value from CV
         y = message.y
         ydot = message.y - message.y2
 

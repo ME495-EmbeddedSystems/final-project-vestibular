@@ -47,15 +47,20 @@ class balance:
             none
         '''
         self.amp = .05
-        self.time=rospy.get_time()
+        self.time = rospy.get_time()
         self.robot = moveit_commander.RobotCommander()
         self.scene = moveit_commander.PlanningSceneInterface()
         self.move_group = moveit_commander.MoveGroupCommander("panda_arm") 
         self.grip_group = moveit_commander.MoveGroupCommander("hand")
 
         self.pose_sub = rospy.Subscriber("/ball_pose",Ball_pose,self.pose_callback)
+<<<<<<< HEAD
         # self.fr_pub = rospy.Publisher("position_joint_trajectory_controller/command",JointTrajectory,queue_size = 1)
         self.interf = rospy.Publisher("angle_updates", BoardPose, queue_size = 1)
+=======
+        self.fr_pub = rospy.Publisher("position_joint_trajectory_controller/command",JointTrajectory,queue_size = 1)
+        self.interf = rospy.Publisher("angle_updates", JointTrajectory, queue_size = 1)
+>>>>>>> daelan
 
         # self.__test_jbalance = rospy.Service("test_jbal",Empty,self.j_balancer)
         self.__test_dbalance = rospy.Service("dbalance",Empty,self.d_balancer)
@@ -78,6 +83,7 @@ class balance:
         self.ball_x = data.x
         self.ball_y = data.y
         self.ball_z = data.z
+        # print(rospy.Time.now())
 
         self.ball_x2 = data.x2
         self.ball_y2 = data.y2
@@ -264,6 +270,7 @@ class balance:
             new_js.points = [js_point]
 
             
+<<<<<<< HEAD
             # self.fr_pub.publish(new_js)
             new_pose = BoardPose()
             new_pose.theta_x = theta2_offset
@@ -271,6 +278,10 @@ class balance:
             self.interf.publish(new_pose)
 
             
+=======
+            self.fr_pub.publish(new_js)
+            #self.interf.publish(new_js) #publishes to joint_controller_interface
+>>>>>>> daelan
 
             rate.sleep()
 
@@ -379,7 +390,7 @@ class balance:
             #     change = np.sin(t*pi/4)*t
             #     change2 = np.cos(t*pi/4)*t
             # else:
-            #     change = np.sin(t*pi/4)*0.2
+            #     change = np.sin(t*pi/4)*0.2S
             #     change2 = np.cos(t*pi/4)*0.2
             change = np.sin(t*pi/4)*self.amp
             change2 = np.cos(t*pi/4)*self.amp
