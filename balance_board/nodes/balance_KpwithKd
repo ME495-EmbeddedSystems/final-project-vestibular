@@ -94,8 +94,7 @@ class balance:
     def inner_serve(self,req):
         # self.circle_thresh = data.threshold
         # self.stop_scale = data.stopscale
-        self.circle_thresh = 2
-        # tried stop scale 0.0025 with inner offset added to theta offsets
+        self.circle_thresh = 30
         self.stop_scale = 0.025
 
         rate = rospy.Rate(100)
@@ -119,9 +118,8 @@ class balance:
             new_js.joint_names = ['panda_joint1','panda_joint2','panda_joint3','panda_joint4', 'panda_joint5', 'panda_joint6','panda_joint7']
             
             js_point = JointTrajectoryPoint()
-            # tried 0.03, 0.3, 0.1, 1
-            self.x_vel = 0.1*(self.ball_x-self.ball_x2)
-            self.y_vel = 0.1*(self.ball_y-self.ball_y2)
+            self.x_vel = (self.ball_x-self.ball_x2)
+            self.y_vel = (self.ball_y-self.ball_y2)
 
             print(f"xvel = {self.x_vel} y_vel = {self.y_vel}")
 
@@ -129,6 +127,7 @@ class balance:
             inner_offset2 = self.stop_scale * self.x_vel
             inner_offset1 = self.stop_scale * self.y_vel
 
+            
 
             js_point.positions = [0,-pi/2,pi/2, -pi/2, -pi/2+inner_offset2, pi/2+inner_offset1, pi/4]
             
@@ -142,10 +141,10 @@ class balance:
                 new_pose.theta_y = 0.02
             elif (abs(distx) < self.circle_thresh) and (abs(disty) < self.circle_thresh) :
                 new_pose.theta_x =  0
-                new_pose.theta_y = 0
+                new_pose.theta_y =  0
             else:
                 new_pose.theta_x =  theta2_offset + inner_offset2
-                new_pose.theta_y =  theta1_offset + inner_offset1
+                new_pose.theta_y =  theta1_offset +0.02 + inner_offset1
                 
             self.interf.publish(new_pose)
 
