@@ -1,6 +1,7 @@
 <launch>
     <include file="$(find panda_moveit_config)/launch/panda_control_moveit_rviz.launch">
-        <arg name="launch_franka_control" default="false"/>
+        <arg name="launch_franka_control" default="false"/>/>
+        <arg name="robot_ip" value="robot.franka.de"/>
     </include>
 
     <node name="realsense_node" pkg="balance_board" type="CV_test"/>

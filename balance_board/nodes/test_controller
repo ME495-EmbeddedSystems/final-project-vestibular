@@ -46,8 +46,8 @@ class TestController:
 
         amp = 0.2
 
-        self.trajectory_x = amp*np.sin(self.trajectory_x)
-        self.trajectory_y = amp*np.cos(self.trajectory_y)
+        self.trajectory_x = amp*(np.sin(self.trajectory_x))
+        self.trajectory_y = amp*(np.cos(self.trajectory_y))
         
         self.index = 0
         

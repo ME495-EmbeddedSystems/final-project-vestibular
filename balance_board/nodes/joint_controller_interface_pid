@@ -12,6 +12,8 @@ from math import pi
 from std_srvs.srv import Empty, EmptyResponse
 from balance_board.msg import BoardPose
 from balance_board.msg import PlotPoint
+from balance_board.srv import Gains
+from board_pid import BoardPid
 import sys
 
 class JointControllerInterface:
@@ -25,16 +27,31 @@ class JointControllerInterface:
 
         self.joint_home = {'panda_joint1':0,'panda_joint2': -pi/2,'panda_joint3':pi/2,'panda_joint4': -pi/2, 'panda_joint5':-pi/2, 'panda_joint6':pi/2,'panda_joint7': pi/4}
 
-        self.max_increment = rospy.get_param("~max_angle_increment")
         self.pub_freq = rospy.get_param("~joint_update_frequency")
 
         self.angle_subscriber = rospy.Subscriber("angle_updates", BoardPose, self.angle_subscriber_callback)
         self.joint_timer = rospy.Timer(rospy.Duration(1/self.pub_freq), self.joint_timer_callback)
         self.fr_pub = rospy.Publisher("position_joint_trajectory_controller/command",JointTrajectory,queue_size = 1)
         self.plotter = rospy.Publisher("plot_log", PlotPoint, queue_size=10)
+        self.set_gains = rospy.Service("jci_gains", Gains, self.set_gains_callback)
 
         self.theta_x = 0
         self.theta_y = 0
+
+        self.kp = 0.5
+        self.kd = 0.1
+
+        self.x_pid = BoardPid(
+            kp=self.kp,
+            kd=self.kd,
+            out_max = pi/4
+        )
+
+        self.y_pid = BoardPid(
+            kp=self.kp,
+            kd=self.kd,
+            out_max = pi/4
+        )
 
         self.enable = rospy.Service("start", Empty, self.enable_callback)
         self.disable = rospy.Service("stop", Empty, self.disable_callback)
@@ -74,6 +91,9 @@ class JointControllerInterface:
         self.theta_x = message.theta_x
         self.theta_y = message.theta_y
 
+        self.x_pid.set_target(message.theta_x)
+        self.y_pid.set_target(message.theta_y)
+
     def joint_timer_callback(self, message):
         if not self.state:
             return
@@ -83,35 +103,16 @@ class JointControllerInterface:
         new_js.joint_names = ['panda_joint1','panda_joint2','panda_joint3','panda_joint4', 'panda_joint5', 'panda_joint6','panda_joint7']
         
         js_point = JointTrajectoryPoint()
-        js_point.positions = [0,-pi/2, pi/2, -pi/2, -pi/2+self.theta_x, pi/2+self.theta_y, pi/4]
-        
-        x_inc = js_point.positions[4] - joint_val[4]
-        y_inc = js_point.positions[5] - joint_val[5]
 
-        if not abs(x_inc) == 0:
-            x_scale = self.max_increment/abs(x_inc)
-        else:
-            x_scale = 1
-        if not abs(y_inc) == 0:
-            y_scale = self.max_increment/abs(y_inc)
-        else:
-            y_scale = 1
+        new_theta_x = self.x_pid.get(joint_val[4]+pi/2)
+        new_theta_y = self.y_pid.get(joint_val[5]-pi/2)
 
-        scale = min([x_scale, y_scale, 1])
-
-        js_point.positions[4] = joint_val[4] + scale*x_inc
-        js_point.positions[5] = joint_val[5] + scale*y_inc
-
-
+        js_point.positions = [0,-pi/2, pi/2, -pi/2, -pi/2+new_theta_x, pi/2+new_theta_y, pi/4]
 
         js_point.time_from_start.nsecs = 2*int(1000000000/self.pub_freq)
         new_js.points = [js_point]
         
         self.fr_pub.publish(new_js)
-
-        targ = PlotPoint()
-        command = PlotPoint()
-        actual = PlotPoint()
 
         self.x_targ_plot.value = self.theta_x
         self.x_command_plot.value = js_point.positions[4] + pi/2
@@ -151,6 +152,12 @@ class JointControllerInterface:
     def disable_callback(self, message):
         self.state = False
         return EmptyResponse()
+
+    def set_gains_callback(self, msg):
+        self.x_pid.set_gains(kp=msg.kp, ki= msg.ki, kd=msg.kd)
+        self.y_pid.set_gains(kp=msg.kp, ki= msg.ki, kd=msg.kd)
+        return 0
+
 
 if __name__=='__main__': # main run for node. inits node, runs class, and spins
     '''
