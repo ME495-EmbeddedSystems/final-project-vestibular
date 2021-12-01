@@ -14,3 +14,6 @@ float64 z3 #(m)
 float64 x_way #(m)
 float64 y_way #(m)
 float64 z_way #(m)
+
+float64[] ball_coord
+float64[] way_coord
