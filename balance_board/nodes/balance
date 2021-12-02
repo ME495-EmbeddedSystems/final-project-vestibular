@@ -31,8 +31,13 @@ from sensor_msgs.msg import JointState
 from control_msgs.msg import JointTrajectoryControllerState
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
-from balance_board.msg import Ball_pose
+from balance_board.msg import Ball_pose, Path_map
 from balance_board.msg import BoardPose
+from balance_board.srv import Map_path
+
+from cv_bridge import CvBridge, CvBridgeError
+from sensor_msgs.msg import Image
+import cv2
 
 
 
@@ -54,6 +59,9 @@ class balance:
         self.grip_group = moveit_commander.MoveGroupCommander("hand")
 
         self.pose_sub = rospy.Subscriber("/ball_pose",Ball_pose,self.pose_callback)
+        self.path_sub = rospy.Subscriber("/path_map",Image,self.path_cb)
+
+
         self.fr_pub = rospy.Publisher("position_joint_trajectory_controller/command",JointTrajectory,queue_size = 1)
         self.interf = rospy.Publisher("angle_updates", JointTrajectory, queue_size = 1)
 
@@ -66,12 +74,24 @@ class balance:
         self.__test_loop = rospy.Service("loop_on",Empty,self.loop_callback)
         self.__loop_off = rospy.Service("loop_off",Empty,self.loop_off)
 
+        self.__map_path = rospy.ServiceProxy("/map_path",Empty)
+
         self.joint_home = {'panda_joint1':0,'panda_joint2': -pi/2,'panda_joint3':pi/2,'panda_joint4': -pi/2, 'panda_joint5':-pi/2, 'panda_joint6':pi/2+0.02,'panda_joint7': pi/4}
 
         self.loop_on =0
-
+        
+        self.path_map = Image()
         self.circle_thresh=0
         self.stop_scale = 0
+
+    def path_cb(self,data):
+        self.path_map = data
+        print(self.path_map)
+        cv2.imshow('pic',self.path_map)
+
+        # print("from the callback")
+        # print(self.path_map)
+
 
     
     def pose_callback(self,data):
@@ -165,7 +185,7 @@ class balance:
             
             try:
                 if err1>0.01 or err2>0.01:
-                    print(f"fuck you {err1}")
+                    print(f"oof {err1}")
                     
                     print(theta1_offset)
                     print(theta2_offset)
@@ -219,6 +239,7 @@ class balance:
         
         
         while self.loop_on == 1:
+            
 
 
 
@@ -408,6 +429,11 @@ class balance:
 
         joint_val = mg.get_current_joint_values()
         print(f"Current joint values {joint_val}")
+
+        self.__map_path()
+        print("path_map")
+        print(self.path_map)
+
 
         return EmptyResponse()
 

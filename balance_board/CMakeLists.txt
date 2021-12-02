@@ -49,6 +49,7 @@ add_message_files(
    FILES
    Ball_pose.msg
    BoardPose.msg
+   Path_map.msg
    PlotPoint.msg
 #   Message1.msg
 #   Message2.msg
@@ -58,6 +59,7 @@ add_message_files(
 add_service_files(
  FILES
  Gains.srv
+ Map_path.srv
 #   Service2.srv
 )
 
