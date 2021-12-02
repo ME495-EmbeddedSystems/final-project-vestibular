@@ -1,0 +1,68 @@
+#!/usr/bin/env python3
+'''
+use control theta to control xddot, to get the desired velocity (both in acceleration zone constant zone and deceleration zone)
+
+PUBLISHERS:
+  + 
+SUBSCRIBERS
+  +  
+SERVICES:
+  none
+PARAMETERS
+  + none
+'''
+#imports
+import rospy
+from math import pi
+from balance_board.msg import BoardPose,Ball_pose, PlotPoint
+from balance_board.srv import Gains
+from board_pid import BoardPid
+from std_srvs.srv import Empty
+# import geometry_msgs.msg
+
+class PD:
+    def __init__(self):
+        '''
+        The initiation function of the flip. Initiates subscribers and variables
+        INPUTS:
+            none
+        OUTPUTS:
+            none
+        '''
+
+        # inits publishers, subscribers services
+        self.angle_pub = rospy.Publisher('angle_updates', BoardPose, queue_size=10)
+        self.trigger_x = rospy.Service('trigger', Empty, self.trigger)
+
+        self.x = pi/4
+        self.y = pi/4
+
+    def trigger_callback(self, msg):
+        
+        # inits new board pose message
+        pose = BoardPose()
+
+        # gets new angle values for the board from PID objects
+        pose.theta_x = self.x
+        pose.theta_y = self.y
+
+        self.angle_pub.publish(pose)  
+
+        self.x = -self.x
+        self.y = -self.y
+
+        # publishes new joint angles to the jci
+        
+    
+
+def main():
+    
+    rospy.init_node('nested_pd_controller', anonymous=True)
+    controller = PD()
+    rospy.spin()
+
+if __name__ == '__main__':
+    try:
+        main()
+    except rospy.ROSInterruptException:
+        pass

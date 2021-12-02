@@ -171,6 +171,8 @@ include_directories(
    nodes/pd_controller
    nodes/square
    nodes/circle
+   nodes/waypoints
+   nodes/rci_tuning_controller
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 
