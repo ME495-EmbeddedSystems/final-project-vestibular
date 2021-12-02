@@ -1,4 +1,4 @@
-#!/usr/bin/env
+#!/usr/bin/env python3
 '''
 use control theta to control xddot, to get the desired velocity (both in acceleration zone constant zone and deceleration zone)
 

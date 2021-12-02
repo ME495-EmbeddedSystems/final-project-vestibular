@@ -352,6 +352,16 @@ class Comp_vis:
                     print("No x coords yet")
                 
                 try:
+                    poses.ball_coord = ball_coord
+                except:
+                    print("ball coord no pub")
+                
+                try:
+                    poses.way_coord = way_coord
+                except:
+                    print("waypoint coord no pub")
+                
+                try:
                     print(poses)
 
                     poses.x = cx
@@ -366,6 +376,9 @@ class Comp_vis:
                     self.pose_pub.publish(poses)
                 except:
                     print("pub failed")
+
+                
+                    
                 
                 print(f"Time {rospy.get_time}")
                 print(f"iteration {iteration}")
