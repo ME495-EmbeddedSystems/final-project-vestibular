@@ -37,12 +37,14 @@ class Astar:
     def __init__(self):
 
         # maze = rospy.get_param("maze")
+
+        # 1 is wall, zero is open
         maze = [[0, 1, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0],
             [0, 1, 0, 1, 0, 0],
             [0, 1, 0, 0, 1, 0],
             [0, 0, 0, 0, 1, 0]]
-    
+
         start = [0, 0] # starting position
         end = [4,5] # ending position
         cost = 1 # cost per movement
