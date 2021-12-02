@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
-intermediate between nodes and position_joint_trajectory_controller/command
-in order to only publish new values when messages are sent to "angle_updates" -  because the publisher switches upon meeting acceleration limit
+predict the trajecory x, y in 5 time step later
 
 """
 
