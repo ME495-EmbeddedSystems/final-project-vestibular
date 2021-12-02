@@ -11,6 +11,7 @@ from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from math import pi
 from std_srvs.srv import Empty, EmptyResponse
 from std_msgs.msg import Float64MultiArray
+from sensor_msgs.msg import JointState
 from balance_board.msg import BoardPose
 from balance_board.msg import PlotPoint
 from board_pid import BoardPid
@@ -61,6 +62,7 @@ class JointControllerInterface:
         self.enable = rospy.Service("start", Empty, self.enable_callback)
         self.disable = rospy.Service("stop", Empty, self.disable_callback)
         self.home = rospy.Service("home", Empty, self.home_callback)
+        self.translate = rospy.Subscriber('joint_states', JointState, self.translator_callback)
 
         rospy.wait_for_service("controller_manager/switch_controller")
         self.switch = rospy.ServiceProxy("controller_manager/switch_controller", SwitchController)
@@ -108,18 +110,16 @@ class JointControllerInterface:
 
     def angle_subscriber_callback(self, message):
         # sets new desired angles from high level controller
-        self.theta_x = message.theta_x
-        self.theta_y = message.theta_y
+        self.theta_x = max(-pi/4, min(pi/4, message.theta_x))
+        self.theta_y = max(-pi/4, min(pi/4, message.theta_y))
 
     def translator_callback(self, message):
         new_pose = BoardPose()
-        new_pose.theta_x = message.position[4]
-        new_pose.theta_y = message.position[5]
+        new_pose.theta_x = message.position[4] + pi/2
+        new_pose.theta_y = message.position[5] - pi/2
         self.cur_angle_pub.publish(new_pose)
 
     def joint_timer_callback(self, message):
-
-        self.cur_angle_pub.publish(cur_pos)
 
         # exits if robot is disabled wihthout sending new position target
         if not self.state:

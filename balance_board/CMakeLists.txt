@@ -167,6 +167,8 @@ include_directories(
    nodes/dynamic_trap_controller
    nodes/test_controller
    nodes/pd_controller
+   nodes/square
+   nodes/circle
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 

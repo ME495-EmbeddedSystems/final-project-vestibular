@@ -31,11 +31,13 @@ class PD:
         # inits publishers, subscribers services
         self.angle_pub = rospy.Publisher('angle_updates', BoardPose, queue_size=10)
         self.vision_system = rospy.Subscriber("/ball_pose", Ball_pose, self.vision_callback)
+        self.target = rospy.Subscriber('target', Ball_pose, self.target_callback)
         self.plotter = rospy.Publisher('plot_log', PlotPoint, queue_size=10)
         self.set_gains = rospy.Service('set_gains', Gains, self.set_gains_callback)
+        self.set_target = rospy.Service('set_target', Gains, self.set_target_callback)
 
-        self.pos_kp = 0.0005
-        self.pos_kd = 10
+        self.pos_kp = 0.001
+        self.pos_kd = 15
         self.frames_smoothing = 1
 
         self.x_pid = BoardPid(
@@ -86,6 +88,15 @@ class PD:
         self.x_pid.set_gains(kp=msg.kp, ki= msg.ki, kd=msg.kd)
         self.y_pid.set_gains(kp=msg.kp, ki= msg.ki, kd=msg.kd)
         return 0
+
+    def set_target_callback(self, msg):
+        self.x_pid.set_target(msg.kp)
+        self.y_pid.set_target(msg.ki)
+        return 0
+
+    def target_callback(self, msg):
+        self.x_pid.set_target(msg.x_way)
+        self.y_pid.set_target(msg.y_way)
 
 def main():
     

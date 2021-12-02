@@ -9,7 +9,7 @@
         <rosparam command="load" file="$(find balance_board)/config/interface_params.yaml"/>
     </node>
 
-    <node name="velocity_max_test" pkg="balance_board" type="velocity_max_test">
+    <node name="velocity_max_test" pkg="balance_board" type="test_velocity_max">
         <rosparam command="load" file="$(find balance_board)/config/dtc_params.yaml"/>
     </node>
 
