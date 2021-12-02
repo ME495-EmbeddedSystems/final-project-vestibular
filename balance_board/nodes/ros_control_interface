@@ -81,32 +81,6 @@ class JointControllerInterface:
         self.traj_to_pos.start_asap = False
         self.traj_to_pos.timeout = 0.0 
 
-        # inits plotting objects
-
-        # self.x_targ_plot = PlotPoint()
-        # self.x_command_plot = PlotPoint()
-        # self.x_actual_plot = PlotPoint()
-
-        # self.y_targ_plot = PlotPoint()
-        # self.y_command_plot = PlotPoint()
-        # self.y_actual_plot = PlotPoint()
-
-        # self.x_targ_plot.plot = "JCI_X_Lag"
-        # self.x_command_plot.plot = "JCI_X_Lag"
-        # self.x_actual_plot.plot = "JCI_X_Lag"
-
-        # self.y_targ_plot.plot = "JCI_Y_Lag"
-        # self.y_command_plot.plot = "JCI_Y_Lag"
-        # self.y_actual_plot.plot = "JCI_Y_Lag"
-
-        # self.x_targ_plot.line = "Desired"
-        # self.x_command_plot.line = "Scaled Desired"
-        # self.x_actual_plot.line = "Actual"
-
-        # self.y_targ_plot.line = "Desired"
-        # self.y_command_plot.line = "Scaled Desired"
-        # self.y_actual_plot.line = "Actual"
-
 
     def angle_subscriber_callback(self, message):
         # sets new desired angles from high level controller
@@ -132,26 +106,6 @@ class JointControllerInterface:
         self.pos_command.data = data
         
         self.pos_pub.publish(self.pos_command)
-
-        
-
-        # # plots values
-        # self.x_targ_plot.value = self.theta_x
-        # self.x_command_plot.value = js_point.positions[4] + pi/2
-        # self.x_actual_plot.value = joint_val[4] + pi/2
-
-        # self.y_targ_plot.value = self.theta_y
-        # self.y_command_plot.value = js_point.positions[5] - pi/2
-        # self.y_actual_plot.value = joint_val[5] - pi/2
-
-        # self.plotter.publish(self.x_targ_plot)
-        # self.plotter.publish(self.x_command_plot)
-        # self.plotter.publish(self.x_actual_plot)
-
-        # self.plotter.publish(self.y_targ_plot)
-        # self.plotter.publish(self.y_command_plot)
-        # self.plotter.publish(self.y_actual_plot)
-
 
     # sends robot to home position
     def home_callback(self, message):

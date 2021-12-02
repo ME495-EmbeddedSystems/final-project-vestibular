@@ -1,0 +1,62 @@
+#!/usr/bin/env python3
+'''
+use control theta to control xddot, to get the desired velocity (both in acceleration zone constant zone and deceleration zone)
+
+PUBLISHERS:
+  + 
+SUBSCRIBERS
+  +  
+SERVICES:
+  none
+PARAMETERS
+  + none
+'''
+#imports
+import rospy
+from std_srvs.srv import Empty, EmptyRequest
+from balance_board.msg import BoardPose,Ball_pose, PlotPoint
+from balance_board.srv import Gains
+from board_pid import BoardPid
+# import geometry_msgs.msg
+
+class PD:
+    def __init__(self):
+        '''
+        The initiation function of the flip. Initiates subscribers and variables
+        INPUTS:
+            none
+        OUTPUTS:
+            none
+        '''
+        self.x=0
+        self.y=0
+        # inits publishers, subscribers services
+        self.targ_pub = rospy.Publisher('target', Ball_pose, queue_size=10)
+        self.save = rospy.Service('get_waypoint', Empty, self.get_callback)
+        self.vision = rospy.Subscriber('ball_pose', Ball_pose, self.vision_callback)
+        self.home = rospy.ServiceProxy('home', Empty)
+
+    def get_callback(self, msg):
+
+        new_pose = Ball_pose()
+        new_pose.x_way = self.x
+        new_pose.y_way = self.y
+
+        self.targ_pub.publish(new_pose)
+
+    def vision_callback(self, msg):
+      self.x = msg.x_way + 50
+      self.y = msg.y_way + 50
+
+
+def main():
+    
+    rospy.init_node('nested_pd_controller', anonymous=True)
+    controller = PD()
+    rospy.spin()
+
+if __name__ == '__main__':
+    try:
+        main()
+    except rospy.ROSInterruptException:
+        pass

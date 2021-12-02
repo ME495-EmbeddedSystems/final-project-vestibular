@@ -64,34 +64,11 @@ class PD:
         pose.theta_y = -self.y_pid.get(msg.y)
 
         # publishes new joint angles to the jci
-        self.angle_pub.publish(pose)
-
-
-        # set and publish plotting values
-        pp_x_way = PlotPoint(plot="x_control", line="targ", value=msg.x_way)
-        pp_y_way = PlotPoint(plot="y_control", line="targ", value=msg.y_way)
-
-        pp_x_actual = PlotPoint(plot="x_control", line="actual", value=msg.x)
-        pp_y_actual = PlotPoint(plot="y_control", line="actual", value=msg.y)
-
-        pp_x_command = PlotPoint(plot="x_control", line="command", value=pose.theta_x)
-        pp_y_command = PlotPoint(plot="y_control", line="command", value=pose.theta_y)    
-
-        self.plotter.publish(pp_x_way)
-        self.plotter.publish(pp_y_way)
-        self.plotter.publish(pp_x_actual)   
-        self.plotter.publish(pp_y_actual) 
-        self.plotter.publish(pp_x_command) 
-        self.plotter.publish(pp_y_command) 
+        self.angle_pub.publish(pose)  
     
     def set_gains_callback(self, msg):
         self.x_pid.set_gains(kp=msg.kp, ki= msg.ki, kd=msg.kd)
         self.y_pid.set_gains(kp=msg.kp, ki= msg.ki, kd=msg.kd)
-        return 0
-
-    def set_target_callback(self, msg):
-        self.x_pid.set_target(msg.kp)
-        self.y_pid.set_target(msg.ki)
         return 0
 
     def target_callback(self, msg):
