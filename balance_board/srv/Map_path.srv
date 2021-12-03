@@ -1,5 +1,5 @@
-int32 is_home
+std_msgs/Empty empty
 
 ---
 
-int32[] path_maze_map
+std_msgs/Int8MultiArray maze_map

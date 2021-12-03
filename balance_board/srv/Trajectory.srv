@@ -1,0 +1,8 @@
+bool clear_queue
+float64 rate
+float64[] x_list
+float64[] y_list
+
+---
+
+bool ok

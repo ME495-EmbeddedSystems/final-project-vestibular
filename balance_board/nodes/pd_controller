@@ -28,13 +28,16 @@ class PD:
             none
         '''
 
+        self.queue = []
+        self.repeat = False
+        self.pos_tol = 5
+
         # inits publishers, subscribers services
         self.angle_pub = rospy.Publisher('angle_updates', BoardPose, queue_size=10)
         self.vision_system = rospy.Subscriber("/ball_pose", Ball_pose, self.vision_callback)
         self.target = rospy.Subscriber('target', Ball_pose, self.target_callback)
         self.plotter = rospy.Publisher('plot_log', PlotPoint, queue_size=10)
         self.set_gains = rospy.Service('set_gains', Gains, self.set_gains_callback)
-        self.set_target = rospy.Service('set_target', Gains, self.set_target_callback)
 
         self.pos_kp = 0.001
         self.pos_kd = 15
@@ -77,7 +80,7 @@ class PD:
 
 def main():
     
-    rospy.init_node('nested_pd_controller', anonymous=True)
+    rospy.init_node('pd_controller', anonymous=True)
     controller = PD()
     rospy.spin()
 

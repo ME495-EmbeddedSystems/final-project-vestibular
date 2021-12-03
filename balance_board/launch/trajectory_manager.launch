@@ -1,0 +1,4 @@
+<launch>
+    <include file="$(find balance_board)/launch/pd_controller.launch"/>
+    <node name="trajectory_manager" pkg="balance_board" type="trajectory_manager"/>
+</launch>
