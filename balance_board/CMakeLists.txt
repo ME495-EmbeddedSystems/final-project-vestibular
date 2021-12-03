@@ -173,6 +173,7 @@ include_directories(
    nodes/circle
    nodes/waypoints
    nodes/rci_tuning_controller
+   nodes/traj_planner
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 
