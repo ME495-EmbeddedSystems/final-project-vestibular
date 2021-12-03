@@ -32,6 +32,8 @@ class Comp_vis:
         self.pose_pub = rospy.Publisher("/ball_pose",Ball_pose, queue_size=10)
         self.path_pub = rospy.Publisher("/path_map",Image,queue_size=1)
         self.__map_path = rospy.Service("/map_path",Empty,self.map_path_cb)
+        self.__map_params = rospy.Service("/map_params",Empty,self.map_params_cb)
+
 
         # self.lower_orng = np.array([3,233,174])
         # self.upper_orng = np.array([27,255,255])
@@ -53,6 +55,16 @@ class Comp_vis:
 
         self.ball_detection()
 
+    def map_params_cb(self,req):
+        rospy.set_param("/path",self.path)
+        rospy.set_param("/maze",self.path)
+        rospy.set_param("/waypoints",self.waypoints)
+        rospy.set_param("/borders",self.border)
+        rospy.set_param("/maze_start",self.maze_start)
+        rospy.set_param("/maze_start",self.maze_end)
+        return EmptyResponse()
+
+
     def map_path_cb(self,req):
         mybridge = CvBridge()
         current_path_map = Image()
@@ -70,6 +82,7 @@ class Comp_vis:
         # self.path_pub.publish(mybridge.cv2_to_imgmsg(to_pub,encoding = 'passthrough'))
         # self.path_pub.publish(to_pub)
         self.path_pub.publish(current_path_map)
+
 
         return EmptyResponse()
 
@@ -141,7 +154,12 @@ class Comp_vis:
         self.high_S_name = 'High S'
         self.high_V_name = 'High V'
 
+        #### Parameter variable inits
         self.path=[]
+        self.waypoints=[]
+        self.border = []
+        self.maze_start = []
+        self.maze_end = []
         
         # parser = argparse.ArgumentParser(description='Code for Thresholding Operations using inRange tutorial.')
         # parser.add_argument('--camera', help='Camera devide number.', default=0, type=int)
@@ -256,7 +274,7 @@ class Comp_vis:
                 path_mask = cv2.inRange(hsv, self.lower_purple, self.upper_purple)
 
                 ###########################
-                self.path=path_mask
+
                 
                 # Bitwise-AND mask and original image
                 res = cv2.bitwise_and(bg_removed,bg_removed, mask= mask)
@@ -421,6 +439,23 @@ class Comp_vis:
                 except:
                     print("sum ting wong waypoint 2")
                 cv2.drawContours(bg_removed, path_contours, -1, (255,0,127),3)
+
+
+
+
+
+                ####################################### parameter zone
+                self.path=path_mask
+                # self.maze = maze_mask
+                self.waypoints = [[way_cx,way_cy,way_depth],[way2_cx,way2_cy,way2_depth]]
+                self.border = border_mask
+                self.maze_start = [way_cx,way_cy]
+                self.maze_end = [way2_cx,way2_cy]
+
+                
+                
+
+
 
 
                 ###### populate publisher msg
