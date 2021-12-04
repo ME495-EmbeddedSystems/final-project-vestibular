@@ -4,6 +4,7 @@ import pyrealsense2 as rs
 import numpy as np
 import rospy
 from std_srvs.srv import Empty, EmptyResponse
+from planner import Astar
 from std_msgs.msg import Int8MultiArray
 from geometry_msgs.msg import Twist, Vector3
 from tf_conversions import transformations
@@ -15,6 +16,8 @@ import modern_robotics as mr
 import time
 import argparse
 from balance_board.srv import Map_path
+from balance_board.srv import Trajectory, TrajectoryRequest
+
 
 from cv_bridge import CvBridge, CvBridgeError
 from sensor_msgs.msg import Image
@@ -66,12 +69,39 @@ class Comp_vis:
         self.ball_detection()
 
     def map_params_cb(self,req):
-        rospy.set_param("/path",self.path)
-        rospy.set_param("/maze",self.path)
-        rospy.set_param("/waypoints",self.waypoints)
-        rospy.set_param("/borders",self.border)
-        rospy.set_param("/maze_start",self.maze_start)
-        rospy.set_param("/maze_start",self.maze_end)
+        self.cost = 1
+        self.maze = self.path
+        self.astar = Astar(self.maze,self.start, self.end,self.cost)
+        self.path_map = np.array(self.astar.main())
+        max_path = np.max(self.path_map,axis=None)
+        # print(max_path)
+        min_index = np.where(self.path_map == 0)
+        max_index = np.where(self.path_map == max_path)
+        self.traj_index = np.array([[]])
+        self.traj_index = np.array([[min_index[0][0],min_index[1][0]]])
+        x_list = np.array([min_index[0][0]])
+        y_list = np.array([min_index[1][0]])
+
+        for i in range(max_path):
+            indices = np.array([[np.where(self.path_map==i+1)[0][0],np.where(self.path_map==i+1)[1][0]]])
+            x_list = np.append(x_list,indices[0][0])
+            y_list = np.append(y_list,indices[0][1])
+            self.traj_index = np.append(self.traj_index,indices,axis=0)
+
+        traj = TrajectoryRequest()
+        traj.x_list = x_list
+        traj.y_list = y_list
+        traj.clear_queue = True
+        traj.rate = 5
+
+        self.new_traj.call(traj)
+
+        # rospy.set_param("/path",self.path)
+        # rospy.set_param("/maze",self.path)
+        # rospy.set_param("/waypoints",self.waypoints)
+        # rospy.set_param("/borders",self.border)
+        # rospy.set_param("/maze_start",self.maze_start)
+        # rospy.set_param("/maze_start",self.maze_end)
         return EmptyResponse()
 
 
