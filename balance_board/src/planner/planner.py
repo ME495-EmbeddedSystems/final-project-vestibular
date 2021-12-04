@@ -10,12 +10,9 @@ class Node:
     self.h = 0 
     self.f = 0
 
-<<<<<<< HEAD:balance_board/nodes/Astar
-=======
   def __eq__(self,other):
     return self.position == other.position
 
->>>>>>> eec7e28c95c23c3baf34def1e25548906be39eab:balance_board/src/planner/planner.py
 class Astar:
 
     def __init__(self, maze, start, end, cost):

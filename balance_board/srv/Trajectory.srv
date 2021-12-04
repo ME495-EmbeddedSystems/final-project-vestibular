@@ -1,4 +1,5 @@
 bool clear_queue
+bool repeat
 float64 rate
 float64[] x_list
 float64[] y_list

@@ -33,8 +33,8 @@ class PD:
         self.repeat = False
         self.wait = True
         self.pos_tol = 5
-        self.cur_x = 0
-        self.cur_y = 0
+        self.cur_x = 300
+        self.cur_y = 300
         self.base_rate = 50
         self.period = 0
         self.converged = False
@@ -49,27 +49,27 @@ class PD:
 
     def vision_callback(self, msg):
 
-        if math.sqrt((msg.x-self.x)**2 + (msg.y-self.y)**2) < self.pos_tol:
+        if math.sqrt((msg.x-self.cur_x)**2 + (msg.y-self.cur_y)**2) < self.pos_tol:
             self.converged = True
         else:
             self.converged = False
     
     def set_trajectory_callback(self, msg):
-        if not len(msg.x) == len(msg.y):
+        if not len(msg.x_list) == len(msg.y_list):
             return False 
 
         if msg.clear_queue:
-            self.x_queue = msg.x
-            self.y_queue = msg.y
+            self.x_queue = [*msg.x_list]
+            self.y_queue = [*msg.y_list]
             self.repeat = msg.repeat
-            if self.rate == 0:
+            if msg.rate == 0:
                 self.wait = True
             else:
                 self.period = 1/msg.rate
                 self.wait = False
         else:
-            self.x_queue = self.x_queue+msg.x
-            self.y_queue = self.y_queue+msg.y
+            self.x_queue = self.x_queue+[*msg.x_list]
+            self.y_queue = self.y_queue+[*msg.y_list]
             
         return True
 

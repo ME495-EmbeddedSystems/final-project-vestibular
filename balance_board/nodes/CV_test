@@ -53,15 +53,15 @@ class Comp_vis:
         self.lower_bluemark = np.array([99,87,81]) ### waypoint 1
         self.upper_bluemark = np.array([116,255,142])
 
-        self.map = Map_path()
+        # self.map = Map_path()
 
-        self.map.layout.dim[0].size = 480
-        self.map.layout.dim[0].label = "height"
-        self.map.layout.dim[0].stride = 640*480
+        # # self.map.layout.dim[0].size = 480
+        # # self.map.layout.dim[0].label = "height"
+        # # self.map.layout.dim[0].stride = 640*480
 
-        self.map.layout.dim[1].size = 640
-        self.map.layout.dim[1].label = "width"
-        self.map.layout.dim[1].stride = 640
+        # # self.map.layout.dim[1].size = 640
+        # # self.map.layout.dim[1].label = "width"
+        # # self.map.layout.dim[1].stride = 640
 
         self.ball_detection()
 
@@ -80,8 +80,8 @@ class Comp_vis:
         current_path_map = Image()
         current_path_map.header = rospy.get_time()
 
-        self.map.data = self.path.flatten()
-        return self.map
+        # self.map.data = self.path.flatten()
+        # return self.map
 
         h,w = to_pub.shape()
         current_path_map.height = h
