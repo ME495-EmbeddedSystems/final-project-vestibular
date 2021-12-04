@@ -32,26 +32,44 @@ class PD:
 
         # inits publishers, subscribers services
         self.angle_pub = rospy.Publisher('angle_updates', BoardPose, queue_size=10)
-        self.trigger_x = rospy.Service('trigger', Empty, self.trigger)
+        self.trigger = rospy.Service('trigger', Empty, self.trigger_callback)
+        self.sender = rospy.Timer(rospy.Duration(1/50), self.sender_callback)
+        self.rate = rospy.Service("period", Gains, self.rate_callback)
 
         self.x = pi/4
         self.y = pi/4
 
+        self.period = 0
+
+        self.start_time = rospy.Time.now().to_sec()
+
     def trigger_callback(self, msg):
-        
-        # inits new board pose message
-        pose = BoardPose()
-
-        # gets new angle values for the board from PID objects
-        pose.theta_x = self.x
-        pose.theta_y = self.y
-
-        self.angle_pub.publish(pose)  
 
         self.x = -self.x
         self.y = -self.y
 
-        # publishes new joint angles to the jci
+
+    def sender_callback(self, msg):
+         # inits new board pose message
+        pose = BoardPose()
+        time = rospy.Time.now().to_sec()
+
+        if not self.period == 0 and (time-self.start_time) > self.period:
+            self.x = -self.x
+            self.y = -self.y
+            self.start_time = time
+
+        # gets new angle values for the board from PID objects
+        pose.theta_x = self.x
+        pose.theta_y = self.y
+        self.angle_pub.publish(pose) 
+
+    def rate_callback(self, msg):
+        self.period = msg.ki 
+
+    
+
+
         
     
 

@@ -1,22 +1,4 @@
-#!/usr/bin/env python3
-'''
-A star algorithm - Implements an A star algorithm through a matrix
-
-Referenced - https://github.com/BaijayantaRoy/Medium-Article/blob/master/A_Star.ipynb
-
-
-PUBLISHERS:
-  + 
-SUBSCRIBERS
-  +  
-SERVICES:
-  +
-PARAMETERS
-  + Maze
-'''
-
 import numpy as np
-import rospy
 
 class Node:
 
@@ -31,25 +13,33 @@ class Node:
   def __eq__(self,other):
     return self.position == other.position
 
-
 class Astar:
 
-    def __init__(self):
+    def __init__(self, maze, start, end, cost):
 
         # maze = rospy.get_param("maze")
-        maze = [[0, 1, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0],
-            [0, 1, 0, 1, 0, 0],
-            [0, 1, 0, 0, 1, 0],
-            [0, 0, 0, 0, 1, 0]]
+        # maze = [[0, 1, 0, 0, 0, 0],
+        #     [0, 0, 0, 0, 0, 0],
+        #     [0, 1, 0, 1, 0, 0],
+        #     [0, 1, 0, 0, 1, 0],
+        #     [0, 0, 0, 0, 1, 0]]
     
-        start = [0, 0] # starting position
-        end = [4,5] # ending position
-        cost = 1 # cost per movement
+        # start = [0, 0] # starting position
+        # end = [4,5] # ending position
+        # cost = 1 # cost per movement
+        print(maze)
+        self.maze = maze
+        self.start = start
+        self.end = end
+        self.cost = cost
+        # path = self.search(maze,cost, start, end)
+        # # print(path)
+        # return path
 
-        path = self.search(maze,cost, start, end)
-        print(path)
+    def main(self):
+        path = self.search(maze = self.maze,cost = self.cost, start = self.start, end = self.end)
 
+        return path
 
     def return_path(self,current_node, maze):
         path = []
@@ -166,9 +156,4 @@ class Astar:
 
                     # Add the child to the yet_to_visit list
                     yet_to_visit_list.append(child)
-
-
-if __name__=='__main__': 
-
-    rospy.init_node('Astar')
-    Astar()
+        

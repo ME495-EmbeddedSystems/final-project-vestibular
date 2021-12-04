@@ -45,6 +45,7 @@ class JointControllerInterface:
         # angle commands from high level controller
         self.angle_subscriber = rospy.Subscriber("angle_updates", BoardPose, self.angle_subscriber_callback)
         self.cur_angle_pub = rospy.Publisher('cur_angles', BoardPose, queue_size=10)
+        self.cur_vel_puv = rospy.Publisher('cur_vels', BoardPose, queue_size=10)
         # main robot update timer
         self.joint_timer = rospy.Timer(rospy.Duration(1/self.pub_freq), self.joint_timer_callback)
         # trajectory command topic
@@ -57,6 +58,12 @@ class JointControllerInterface:
         # inits disired angles to home position
         self.theta_x = 0
         self.theta_y = 0
+
+        self.cur_theta_x = 0
+        self.cur_theta_y = 0
+        self.cur_vel_x = 0
+        self.cur_vel_y = 0
+        self.max_vel = 10
 
         # inits services
         self.enable = rospy.Service("start", Empty, self.enable_callback)
@@ -89,9 +96,17 @@ class JointControllerInterface:
 
     def translator_callback(self, message):
         new_pose = BoardPose()
+        new_vel = BoardPose()
         new_pose.theta_x = message.position[4] + pi/2
         new_pose.theta_y = message.position[5] - pi/2
+        self.cur_theta_x = new_pose.theta_x
+        self.cur_theta_y = new_pose.theta_x
+        new_vel.theta_x = message.velocity[4]
+        new_vel.theta_y = message.velocity[5]
+        self.cur_vel_x = new_vel.theta_x
+        self.cur_vel_y = new_vel.theta_x
         self.cur_angle_pub.publish(new_pose)
+        self.cur_vel_puv.publish(new_vel)
 
     def joint_timer_callback(self, message):
 
@@ -100,9 +115,9 @@ class JointControllerInterface:
             return
 
         data = copy.copy(self.pos_home)
+        
         data[4] = data[4] + self.theta_x
         data[5] = data[5] + self.theta_y
-
         self.pos_command.data = data
         
         self.pos_pub.publish(self.pos_command)
