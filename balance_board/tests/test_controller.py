@@ -19,6 +19,24 @@ class ControllerTest(unittest.TestCase):
         value = 2
         self.assertEquals(controller.get(value),0)
 
+    def testcontrollertargetzero(self):
+        """ Test for when target and current position is the same
+        """
+        Kp = 32
+        Ki = 4
+        Kd = 1
+        target = 255
+        controller = BoardPid(
+            kp=Kp,
+            kd=Kd,
+            ki = Ki,
+            target=target
+        )
+
+        value = 255
+        self.assertEquals(controller.get(value),0)
+
+
 
 if __name__ == "__main__":
     import rosunit

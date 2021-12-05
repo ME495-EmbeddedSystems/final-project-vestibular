@@ -17,6 +17,7 @@ PARAMETERS
 
 import numpy as np
 import rospy
+import csv
 from planner import Astar
 from std_srvs.srv import Empty, EmptyResponse
 from balance_board.srv import Trajectory, TrajectoryRequest
@@ -25,11 +26,21 @@ class Plan():
 
     def __init__(self):
 
-      # self.maze = rospy.get_param("maze")
-      # self.start = rospy.get_param("maze_start")
-      # self.end = rospy.get_param("maze_end")
-      
 
+      # f = open('/home/devbhura/fall_2021/Emb_Sys_Robotics/final_project/ws/src/final-project-vestibular/balance_board/config/test_values.csv','r')
+      # maze = f.read()
+      reader = csv.reader(open("/home/devbhura/fall_2021/Emb_Sys_Robotics/final_project/ws/src/final-project-vestibular/balance_board/config/test_values.csv", "r"), delimiter=",")
+      x = list(reader)
+      result = np.array(x).astype("float")
+      result = np.array(result)
+      result = np.where(result > 0,1,result)
+      result = np.transpose(result)
+      self.maze = np.array(result)
+      self.start = np.array([555,200])
+      self.end = np.array([339,356])
+      
+      print(self.maze)
+      print(self.maze[self.start[0]][self.start[1]])
       # self.maze = np.array([[0, 1, 0, 0, 0, 0],
       #             [0, 0, 0, 0, 0, 0],
       #             [0, 1, 0, 1, 0, 0],
@@ -43,9 +54,9 @@ class Plan():
 
     def plan_path_callback(self,msg):
 
-      self.maze = rospy.get_param("maze")
-      self.start = rospy.get_param("maze_start")
-      self.end = rospy.get_param("maze_end")
+      # self.maze = rospy.get_param("maze")
+      # self.start = rospy.get_param("maze_start")
+      # self.end = rospy.get_param("maze_end")
 
       self.astar = Astar(self.maze,self.start, self.end,self.cost)
       self.path_map = np.array(self.astar.main())
