@@ -4,7 +4,7 @@ import pyrealsense2 as rs
 import numpy as np
 import rospy
 from std_srvs.srv import Empty, EmptyResponse
-from planner import Astar
+# from planner import Astar
 from std_msgs.msg import Int8MultiArray
 from geometry_msgs.msg import Twist, Vector3
 from tf_conversions import transformations
@@ -15,8 +15,8 @@ import cv2
 import modern_robotics as mr
 import time
 import argparse
-from balance_board.srv import Map_path
-from balance_board.srv import Trajectory, TrajectoryRequest
+# from balance_board.srv import Map_path
+# from balance_board.srv import Trajectory, TrajectoryRequest
 
 
 from cv_bridge import CvBridge, CvBridgeError
