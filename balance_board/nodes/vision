@@ -6,6 +6,7 @@ import rospy
 from std_srvs.srv import Empty, EmptyResponse
 from matplotlib import pyplot as plt
 from planner import Astar
+from maze_solve import Solver
 from std_msgs.msg import Int8MultiArray
 from geometry_msgs.msg import Twist, Vector3
 from tf_conversions import transformations
@@ -45,8 +46,8 @@ class Comp_vis:
         self.lower_orng = np.array([11,145,131]) ### ball
         self.upper_orng = np.array([37,255,227])
 
-        self.lower_purple = np.array([123,21,90]) #### line
-        self.upper_purple = np.array([141,113,189])
+        self.lower_purple = np.array([114,20,90]) #### line
+        self.upper_purple = np.array([135,113,189])
 
         self.lower_green = np.array([75,39,104]) ### border
         self.upper_green = np.array([94,254,167])
@@ -54,8 +55,8 @@ class Comp_vis:
         self.lower_pink = np.array([157,34,70]) ### waypoint 2
         self.upper_pink = np.array([180,255,169])
 
-        self.lower_bluemark = np.array([99,87,81]) ### waypoint 1
-        self.upper_bluemark = np.array([116,255,142])
+        self.lower_bluemark = np.array([99,138,78]) ### waypoint 1
+        self.upper_bluemark = np.array([110,255,215])
 
         # self.map = Map_path()
 
@@ -71,36 +72,22 @@ class Comp_vis:
 
     def map_params_cb(self,req):
         self.cost = 1
-        self.maze = self.path
+        self.maze = np.array(self.path)
         print("index")
         plt.spy(self.maze)
         plt.show()
         print(self.maze)
         print(self.maze_start)
         print(self.maze_end)
-        self.astar = Astar(np.array(self.maze),np.array(self.maze_start), np.array(self.maze_end),self.cost)
-        self.path_map = np.array(self.astar.main())
+        self.maze = np.where(self.maze > 0, 1, self.maze)
+        self.solver = Solver(self.maze)
+        (x_path, y_path) = self.Solver.get(self.maze_start, self.maze_end)
         print("astar returned")
-        print(self.path_map)
-        np.savetxt("/home/daelan/test_values.txt", self.maze)
-        max_path = np.max(self.path_map,axis=None)
-        # print(max_path)
-        min_index = np.where(self.path_map == 0)
-        max_index = np.where(self.path_map == max_path)
-        self.traj_index = np.array([[]])
-        self.traj_index = np.array([[min_index[0][0],min_index[1][0]]])
-        x_list = np.array([min_index[0][0]])
-        y_list = np.array([min_index[1][0]])
-
-        for i in range(max_path):
-            indices = np.array([[np.where(self.path_map==i+1)[0][0],np.where(self.path_map==i+1)[1][0]]])
-            x_list = np.append(x_list,indices[0][0])
-            y_list = np.append(y_list,indices[0][1])
-            self.traj_index = np.append(self.traj_index,indices,axis=0)
+        np.savetxt("/home/daelan/test_values.txt", self.maze, delimiter=",")
 
         traj = TrajectoryRequest()
-        traj.x_list = x_list
-        traj.y_list = y_list
+        traj.x_list = x_path
+        traj.y_list = y_path
         traj.clear_queue = True
         traj.rate = 5
 
