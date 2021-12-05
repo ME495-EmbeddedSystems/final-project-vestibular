@@ -38,14 +38,11 @@ class Comp_vis:
         self.pose_pub = rospy.Publisher("/ball_pose",Ball_pose, queue_size=10)
         self.path_pub = rospy.Publisher("/path_map",Image,queue_size=1)
         self.__map_path = rospy.Service("/map_path",Empty,self.map_path_cb)
-        self.__map_params = rospy.Service("/solve_maze",Empty,self.map_params_cb)
-        self.follow_line = rospy.Service("/follow_line",Empty,self.map_follow_cb)
+        # self.__map_params = rospy.Service("/solve_maze",Empty,self.map_params_cb)
+        self.follow_line = rospy.Service("/maze_follow",Empty,self.map_follow_cb)
         self.new_traj = rospy.ServiceProxy("new_trajectory", Trajectory)
-<<<<<<< HEAD
         self.__line_follow = rospy.Service("/line_follow",Empty,self.line_follow)
-=======
         self.maze_soln = np.zeros((480, 640))
->>>>>>> b830cc3f94015910fee64651d43f1368a91462f0
 
 
         # self.lower_orng = np.array([3,233,174])
@@ -53,8 +50,10 @@ class Comp_vis:
         self.lower_orng = np.array([11,145,131]) ### ball
         self.upper_orng = np.array([37,255,227])
 
-        self.lower_purple = np.array([114,20,90]) #### line
-        self.upper_purple = np.array([135,113,189])
+        # self.lower_purple = np.array([114,20,90]) #### line
+        # self.upper_purple = np.array([135,113,189])
+        self.lower_purple = np.array([117,30,54]) #### line
+        self.upper_purple = np.array([142,189,195])
 
         self.lower_green = np.array([75,39,104]) ### border
         self.upper_green = np.array([94,254,167])
@@ -77,41 +76,7 @@ class Comp_vis:
 
         self.ball_detection()
 
-    def map_params_cb(self,req):
-        self.cost = 1
-        self.maze = np.array(self.path)
-        print("index")
-        
-        print(self.maze)
-        print(self.maze_start)
-        print(self.maze_end)
-        kern = np.ones((10,10), np.uint8)
-        self.maze = np.where(self.maze > 0, 1, self.maze)
-        dil_maze = cv2.dilate(self.maze, kern, iterations=1)
-        plt.spy(dil_maze)
-        plt.show()
-        self.solver = Solver(dil_maze)
-        (x_path, y_path) = self.solver.get(self.maze_start, self.maze_end)
-        self.maze_soln = self.solver.path
-        print("astar returned")
-        np.savetxt("/home/daelan/test_values.txt", self.maze, delimiter=",")
-
-        traj = TrajectoryRequest()
-        traj.x_list = x_path
-        traj.y_list = y_path
-        traj.clear_queue = True
-        traj.rate = 20
-
-        self.new_traj.call(traj)
-
-        # rospy.set_param("/path",self.path)
-        # rospy.set_param("/maze",self.path)
-        # rospy.set_param("/waypoints",self.waypoints)
-        # rospy.set_param("/borders",self.border)
-        # rospy.set_param("/maze_start",self.maze_start)
-        # rospy.set_param("/maze_start",self.maze_end)
-        return EmptyResponse()
-
+    
     def map_follow_cb(self,req):
         self.cost = 1
         self.maze = np.array(self.path)
@@ -125,7 +90,7 @@ class Comp_vis:
         self.maze = np.where(self.maze > 0, 1, self.maze)
         dil_maze = cv2.dilate(self.maze, kern, iterations=1)
         self.solver = Solver(dil_maze)
-        (x_path, y_path) = self.solver.solve_follow(self.maze_start, self.maze_end)
+        (x_path, y_path) = self.solver.solve_maze(self.maze_start, self.maze_end)
         self.maze_soln = self.solver.path
         print("astar returned")
         np.savetxt("/home/daelan/test_values.txt", self.maze, delimiter=",")
@@ -138,12 +103,6 @@ class Comp_vis:
 
         self.new_traj.call(traj)
 
-        # rospy.set_param("/path",self.path)
-        # rospy.set_param("/maze",self.path)
-        # rospy.set_param("/waypoints",self.waypoints)
-        # rospy.set_param("/borders",self.border)
-        # rospy.set_param("/maze_start",self.maze_start)
-        # rospy.set_param("/maze_start",self.maze_end)
         return EmptyResponse()
 
     def line_follow(self,req):
@@ -158,7 +117,7 @@ class Comp_vis:
         print(self.maze_end)
         self.maze = np.where(self.maze > 0, 1, self.maze)
         self.solver = Solver(self.maze)
-        (x_path, y_path) = self.solver.get(self.maze_start, self.maze_end)
+        (x_path, y_path) = self.solver.solve_follow(self.maze_start, self.maze_end)
         self.maze_soln = self.solver.path
         print("astar returned")
         np.savetxt("/home/daelan/test_values.txt", self.maze, delimiter=",")
@@ -408,9 +367,11 @@ class Comp_vis:
                 
                 # Bitwise-AND mask and original image
                 res = cv2.bitwise_and(bg_removed,bg_removed, mask= mask)
+                res_maze = cv2.bitwise_and(bg_removed,bg_removed, mask= way_mask+way2_mask+path_mask)
                 # cv2.imshow('frame',bg_removed)
                 # cv2.imshow('mask',mask)
                 # cv2.imshow('res',res)
+                cv2.imshow('maze',res_maze)
                 # print("checkpoint 2")
                 ##
                 res2 = cv2.bitwise_and(bg_removed,bg_removed, mask= way_mask)
