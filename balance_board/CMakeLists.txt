@@ -177,6 +177,7 @@ include_directories(
    nodes/rci_tuning_controller
    nodes/trajectory_manager
    nodes/traj_planner
+   nodes/vision
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 
