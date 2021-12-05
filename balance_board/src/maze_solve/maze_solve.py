@@ -74,7 +74,7 @@ class Solver():
         self.y_list.append(y)
         self.path = np.zeros(np.shape(self.maze))
         for i in range(len(self.x_list)):
-            self.path[self.y_list[i]][self.x_list[i]] = 1
+            self.path[self.y_list[i]][self.x_list[i]] = 255
 
     def get(self, start, end):
         self.gen_cost(end)

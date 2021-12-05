@@ -13,7 +13,7 @@ PARAMETERS
 '''
 #imports
 import rospy
-from balance_board.msg import BoardPose, Ball_pose
+from balance_board.msg import BoardPose, Ball_pose, RobotState
 from balance_board.srv import Trajectory
 import math
 # import geometry_msgs.msg
@@ -38,11 +38,13 @@ class PD:
         self.base_rate = 50
         self.period = 0
         self.converged = False
+        self.rci_state= False
 
         # inits publishers, subscribers services
         self.vision_system = rospy.Subscriber("/ball_pose", Ball_pose, self.vision_callback)
         self.target = rospy.Publisher('target', Ball_pose)
         self.service = rospy.Service("new_trajectory", Trajectory, self.set_trajectory_callback)
+        self.robot_state = rospy.Subscriber("rci_state", RobotState, self.rci_state_callback)
         self.timer = rospy.Timer(rospy.Duration(secs=1/self.base_rate), self.send_target_callback)
         self.start_time = rospy.Time.now().to_sec()
 
@@ -76,7 +78,8 @@ class PD:
     def send_target_callback(self, msg):
         time = rospy.Time.now().to_sec()
         new_target = Ball_pose()
-        if ((self.converged and self.wait) or (time - self.start_time > self.period)) and len(self.x_queue) > 0:
+
+        if ((self.converged and self.wait) or (time - self.start_time > self.period)) and len(self.x_queue) > 0 and self.rci_state:
             new_x = self.x_queue.pop(0)
             new_y = self.y_queue.pop(0)
 
@@ -87,9 +90,12 @@ class PD:
             self.cur_y = new_y
             self.start_time = time
 
-        new_target.x_way = self.cur_x
-        new_target.y_way = self.cur_y
+        new_target.x_way = self.cur_x 
+        new_target.y_way = self.cur_y 
         self.target.publish(new_target)
+
+    def rci_state_callback(self, msg):
+        self.rci_state = msg.state
         
 
         

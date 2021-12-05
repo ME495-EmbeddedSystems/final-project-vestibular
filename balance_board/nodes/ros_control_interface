@@ -14,6 +14,7 @@ from std_msgs.msg import Float64MultiArray
 from sensor_msgs.msg import JointState
 from balance_board.msg import BoardPose
 from balance_board.msg import PlotPoint
+from balance_board.msg import RobotState
 from board_pid import BoardPid
 from controller_manager_msgs.srv import SwitchController, SwitchControllerRequest
 import copy
@@ -69,6 +70,7 @@ class JointControllerInterface:
         self.enable = rospy.Service("start", Empty, self.enable_callback)
         self.disable = rospy.Service("stop", Empty, self.disable_callback)
         self.home = rospy.Service("home", Empty, self.home_callback)
+        self.rci_state = rospy.Publisher("rci_state", RobotState, queue_size=10)
         self.translate = rospy.Subscriber('joint_states', JointState, self.translator_callback)
 
         rospy.wait_for_service("controller_manager/switch_controller")
@@ -111,6 +113,8 @@ class JointControllerInterface:
     def joint_timer_callback(self, message):
 
         # exits if robot is disabled wihthout sending new position target
+        self.rci_state.publish(self.state)
+
         if not self.state:
             return
 

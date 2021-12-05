@@ -39,6 +39,7 @@ class Comp_vis:
         self.path_pub = rospy.Publisher("/path_map",Image,queue_size=1)
         self.__map_path = rospy.Service("/map_path",Empty,self.map_path_cb)
         self.__map_params = rospy.Service("/map_params",Empty,self.map_params_cb)
+        self.new_traj = rospy.ServiceProxy("new_trajectory", Trajectory)
 
 
         # self.lower_orng = np.array([3,233,174])
@@ -81,7 +82,8 @@ class Comp_vis:
         print(self.maze_end)
         self.maze = np.where(self.maze > 0, 1, self.maze)
         self.solver = Solver(self.maze)
-        (x_path, y_path) = self.Solver.get(self.maze_start, self.maze_end)
+        (x_path, y_path) = self.solver.get(self.maze_start, self.maze_end)
+        self.maze_soln = self.solver.path
         print("astar returned")
         np.savetxt("/home/daelan/test_values.txt", self.maze, delimiter=",")
 
@@ -89,7 +91,7 @@ class Comp_vis:
         traj.x_list = x_path
         traj.y_list = y_path
         traj.clear_queue = True
-        traj.rate = 5
+        traj.rate = 20
 
         self.new_traj.call(traj)
 
@@ -353,6 +355,10 @@ class Comp_vis:
                 way2_contours, way2_hierarchy = cv2.findContours(way2_mask , cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
                 border_contours, border_hierarchy = cv2.findContours(border_mask , cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
                 path_contours, path_hierarchy = cv2.findContours(path_mask , cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+                try:
+                    maze_path_contours, hierch = cv2.cv2.findContours(self.maze_soln , cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+                except:
+                    print('soln not populated')
                 #print(contours)
                 
 
@@ -497,6 +503,11 @@ class Comp_vis:
                 except:
                     print("sum ting wong waypoint 2")
                 cv2.drawContours(bg_removed, path_contours, -1, (255,0,127),3)
+
+                try:
+                    cv2.drawContours(bg_removed, maze_path_contours, -1, (0,0,0),3)
+                except:
+                    pass
 
 
 

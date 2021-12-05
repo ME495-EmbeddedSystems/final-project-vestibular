@@ -51,6 +51,7 @@ add_message_files(
    Ball_pose.msg
    BoardPose.msg
    Path_map.msg
+   RobotState.msg
    PlotPoint.msg
 #   Message1.msg
 #   Message2.msg
