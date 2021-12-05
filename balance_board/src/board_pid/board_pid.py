@@ -42,7 +42,9 @@ class BoardPid:
                 return self.halt_out
 
         # get timestep since last controller call
-        dt = time.time() - self.last_time 
+        cur_time = time.time()
+        dt = cur_time - self.last_time
+        self.last_time = cur_time
 
         # get new error between current sensor value and target
         err = self.target-val 
