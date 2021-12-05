@@ -55,6 +55,7 @@ class JointControllerInterface:
         self.pos_pub = rospy.Publisher("pos_control/command", Float64MultiArray, queue_size=10)
         # plotting topic
         self.plotter = rospy.Publisher("plot_log", PlotPoint, queue_size=10)
+        self.rci_state = rospy.Publisher("rci_state", RobotState, queue_size=10)
 
         # inits disired angles to home position
         self.theta_x = 0
@@ -102,11 +103,11 @@ class JointControllerInterface:
         new_pose.theta_x = message.position[4] + pi/2
         new_pose.theta_y = message.position[5] - pi/2
         self.cur_theta_x = new_pose.theta_x
-        self.cur_theta_y = new_pose.theta_x
+        self.cur_theta_y = new_pose.theta_y
         new_vel.theta_x = message.velocity[4]
         new_vel.theta_y = message.velocity[5]
         self.cur_vel_x = new_vel.theta_x
-        self.cur_vel_y = new_vel.theta_x
+        self.cur_vel_y = new_vel.theta_y
         self.cur_angle_pub.publish(new_pose)
         self.cur_vel_puv.publish(new_vel)
 
