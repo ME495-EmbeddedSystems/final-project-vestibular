@@ -38,8 +38,10 @@ class Comp_vis:
         self.pose_pub = rospy.Publisher("/ball_pose",Ball_pose, queue_size=10)
         self.path_pub = rospy.Publisher("/path_map",Image,queue_size=1)
         self.__map_path = rospy.Service("/map_path",Empty,self.map_path_cb)
-        self.__map_params = rospy.Service("/map_params",Empty,self.map_params_cb)
+        self.__map_params = rospy.Service("/solve_maze",Empty,self.map_params_cb)
+        self.follow_line = rospy.Service("/follow_line",Empty,self.map_follow_cb)
         self.new_traj = rospy.ServiceProxy("new_trajectory", Trajectory)
+        self.maze_soln = np.zeros((480, 640))
 
 
         # self.lower_orng = np.array([3,233,174])
@@ -75,14 +77,51 @@ class Comp_vis:
         self.cost = 1
         self.maze = np.array(self.path)
         print("index")
+        
+        print(self.maze)
+        print(self.maze_start)
+        print(self.maze_end)
+        kern = np.ones((10,10), np.uint8)
+        self.maze = np.where(self.maze > 0, 1, self.maze)
+        dil_maze = cv2.dilate(self.maze, kern, iterations=1)
+        plt.spy(dil_maze)
+        plt.show()
+        self.solver = Solver(dil_maze)
+        (x_path, y_path) = self.solver.get(self.maze_start, self.maze_end)
+        self.maze_soln = self.solver.path
+        print("astar returned")
+        np.savetxt("/home/daelan/test_values.txt", self.maze, delimiter=",")
+
+        traj = TrajectoryRequest()
+        traj.x_list = x_path
+        traj.y_list = y_path
+        traj.clear_queue = True
+        traj.rate = 20
+
+        self.new_traj.call(traj)
+
+        # rospy.set_param("/path",self.path)
+        # rospy.set_param("/maze",self.path)
+        # rospy.set_param("/waypoints",self.waypoints)
+        # rospy.set_param("/borders",self.border)
+        # rospy.set_param("/maze_start",self.maze_start)
+        # rospy.set_param("/maze_start",self.maze_end)
+        return EmptyResponse()
+
+    def map_follow_cb(self,req):
+        self.cost = 1
+        self.maze = np.array(self.path)
+        print("index")
         plt.spy(self.maze)
         plt.show()
         print(self.maze)
         print(self.maze_start)
         print(self.maze_end)
+        kern = np.ones((10,10), np.uint8)
         self.maze = np.where(self.maze > 0, 1, self.maze)
-        self.solver = Solver(self.maze)
-        (x_path, y_path) = self.solver.get(self.maze_start, self.maze_end)
+        dil_maze = cv2.dilate(self.maze, kern, iterations=1)
+        self.solver = Solver(dil_maze)
+        (x_path, y_path) = self.solver.solve_follow(self.maze_start, self.maze_end)
         self.maze_soln = self.solver.path
         print("astar returned")
         np.savetxt("/home/daelan/test_values.txt", self.maze, delimiter=",")
@@ -355,11 +394,12 @@ class Comp_vis:
                 way2_contours, way2_hierarchy = cv2.findContours(way2_mask , cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
                 border_contours, border_hierarchy = cv2.findContours(border_mask , cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
                 path_contours, path_hierarchy = cv2.findContours(path_mask , cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-                try:
-                    maze_path_contours, hierch = cv2.cv2.findContours(self.maze_soln , cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-                except:
-                    print('soln not populated')
-                #print(contours)
+                # print("trying maze...")
+                # try:
+                #     maze_path_contours, hierch = cv2.findContours(self.maze_soln, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+                # except Exception as e:
+                #     print(e)
+                # #print(contours)
                 
 
                 ####################################### orange ball contours
@@ -505,9 +545,11 @@ class Comp_vis:
                 cv2.drawContours(bg_removed, path_contours, -1, (255,0,127),3)
 
                 try:
-                    cv2.drawContours(bg_removed, maze_path_contours, -1, (0,0,0),3)
-                except:
-                    pass
+                    kern = np.ones((5,5), np.uint8)
+                    path = cv2.dilate(self.maze_soln, kern, iterations=1)
+                    bg_removed[path > 0] = np.array([255,0,0], np.uint8)
+                except Exception as e:
+                    print(e)
 
 
 
