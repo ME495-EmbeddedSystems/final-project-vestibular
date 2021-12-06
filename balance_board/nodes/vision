@@ -61,8 +61,10 @@ class Comp_vis:
         self.lower_pink = np.array([157,34,70]) ### waypoint 2
         self.upper_pink = np.array([180,255,169])
 
-        self.lower_bluemark = np.array([99,138,78]) ### waypoint 1
-        self.upper_bluemark = np.array([110,255,215])
+        # self.lower_bluemark = np.array([99,138,78]) ### waypoint 1
+        # self.upper_bluemark = np.array([110,255,215])
+        self.lower_bluemark = np.array([100,61,89]) ### waypoint 1
+        self.upper_bluemark = np.array([112,219,213])
 
         # self.map = Map_path()
 
@@ -167,7 +169,7 @@ class Comp_vis:
         self.high_H
         self.high_H = val
         self.high_H = max(self.high_H, self.low_H+1)
-        cv.setTrackbarPos(self.high_H_name, self.window_detection_name, self.high_H)
+        cv2.setTrackbarPos(self.high_H_name, self.window_detection_name, self.high_H)
     def on_low_S_thresh_trackbar(self,val):
         self.low_S
         self.high_S

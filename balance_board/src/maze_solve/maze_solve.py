@@ -75,7 +75,7 @@ class Solver():
                         
                 except Exception as e:
                     pass
-        self.wall_cost_function = np.max(self.wall_cost_function) - self.wall_cost_function
+        self.wall_cost_function = (np.max(self.wall_cost_function) - self.wall_cost_function)**2
             
 
     def descend(self, cur):
@@ -125,7 +125,7 @@ class Solver():
             self.path[self.y_list[i]][self.x_list[i]] = 255
 
     def solve_maze(self, start, end):
-        # self.wall_cost()
+        self.wall_cost()
         print("Wall done!")
         self.goal_cost(end)
         print(self.maze)

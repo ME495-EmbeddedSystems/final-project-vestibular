@@ -44,7 +44,7 @@ class PD:
 
         self.pos_kp = 0.001
         self.pos_ki = 0
-        self.pos_kd = 0.0001
+        self.pos_kd = 0.001
         self.frames_smoothing = 1
 
         self.x_pid = BoardPid(
