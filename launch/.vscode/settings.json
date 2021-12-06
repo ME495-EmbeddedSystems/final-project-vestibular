@@ -1,8 +1,0 @@
-{
-    "python.autoComplete.extraPaths": [
-        "/home/daelan/Documents/me495/fp/devel/lib/python3/dist-packages",
-        "/home/daelan/custom_ws/devel/lib/python3/dist-packages",
-        "/home/daelan/Documents/me495/hw3/devel/lib/python3/dist-packages",
-        "/opt/ros/noetic/lib/python3/dist-packages"
-    ]
-}

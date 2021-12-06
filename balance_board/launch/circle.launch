@@ -1,7 +1,0 @@
-<launch>
-    <include file="$(find balance_board)/launch/ros_control_interface.launch">
-    </include>
-    <node name="pd_controller" pkg="balance_board" type="pd_controller"/>
-    <node name="realsense_node" pkg="balance_board" type="CV_test"/>
-    <node name="circle" pkg="balance_board" type="circle"/>
-</launch>

@@ -1,6 +1,0 @@
-<launch>
-    <arg name="launch_vision" default="true"/>
-    <include file="$(find balance_board)/launch/ros_control_interface.launch">
-    </include>
-    <node name="rci_tuning_controller" pkg="balance_board" type="rci_tuning_controller"/>
-</launch>
