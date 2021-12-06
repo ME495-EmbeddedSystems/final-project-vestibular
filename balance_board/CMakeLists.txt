@@ -168,7 +168,7 @@ include_directories(
  catkin_install_python(PROGRAMS
    nodes/bamboo_desiredposition
    nodes/balance
-   nodes/joint_controller_interface
+   nodes/ros_control_interface
    nodes/dynamic_trap_controller
    nodes/test_controller
    nodes/pd_controller
