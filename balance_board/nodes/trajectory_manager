@@ -90,8 +90,8 @@ class PD:
             self.cur_y = new_y
             self.start_time = time
 
-        new_target.x_way = self.cur_x 
-        new_target.y_way = self.cur_y 
+        new_target.x_way = self.cur_x + 50
+        new_target.y_way = self.cur_y + 50
         self.target.publish(new_target)
 
     def rci_state_callback(self, msg):

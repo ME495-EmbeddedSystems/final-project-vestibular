@@ -139,8 +139,9 @@ class Solver():
         inv_maze = np.where(self.maze == -1, 0, inv_maze)
         inv_maze = np.where(self.maze == 0, -1, inv_maze)
         self.maze = inv_maze
-        self.solve_maze(start, end)
+        response = self.solve_maze(start, end)
         self.maze = maze_temp
+        return response
 
 
 # maze = np.array([[0, 1, 0, 0, 0, 0]

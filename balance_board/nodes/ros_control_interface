@@ -44,6 +44,7 @@ class JointControllerInterface:
         # inits subscribers/timers
 
         # angle commands from high level controller
+        self.rci_state = rospy.Publisher("rci_state", RobotState, queue_size=10)
         self.angle_subscriber = rospy.Subscriber("angle_updates", BoardPose, self.angle_subscriber_callback)
         self.cur_angle_pub = rospy.Publisher('cur_angles', BoardPose, queue_size=10)
         self.cur_vel_puv = rospy.Publisher('cur_vels', BoardPose, queue_size=10)
@@ -55,7 +56,7 @@ class JointControllerInterface:
         self.pos_pub = rospy.Publisher("pos_control/command", Float64MultiArray, queue_size=10)
         # plotting topic
         self.plotter = rospy.Publisher("plot_log", PlotPoint, queue_size=10)
-        self.rci_state = rospy.Publisher("rci_state", RobotState, queue_size=10)
+        
 
         # inits disired angles to home position
         self.theta_x = 0
