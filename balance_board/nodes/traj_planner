@@ -1,0 +1,101 @@
+#!/usr/bin/env python3
+'''
+A star algorithm - Implements an A star algorithm through a matrix
+
+Referenced - https://github.com/BaijayantaRoy/Medium-Article/blob/master/A_Star.ipynb
+
+
+PUBLISHERS:
+  + 
+SUBSCRIBERS
+  +  
+SERVICES:
+  +
+PARAMETERS
+  + Maze
+'''
+
+import numpy as np
+import rospy
+import csv
+from planner import Astar
+from std_srvs.srv import Empty, EmptyResponse
+from balance_board.srv import Trajectory, TrajectoryRequest
+
+class Plan():
+
+    def __init__(self):
+
+
+      # f = open('/home/devbhura/fall_2021/Emb_Sys_Robotics/final_project/ws/src/final-project-vestibular/balance_board/config/test_values.csv','r')
+      # maze = f.read()
+      reader = csv.reader(open("/home/devbhura/fall_2021/Emb_Sys_Robotics/final_project/ws/src/final-project-vestibular/balance_board/config/test_values.csv", "r"), delimiter=",")
+      x = list(reader)
+      result = np.array(x).astype("float")
+      result = np.array(result)
+      result = np.where(result > 0,1,result)
+      result = np.transpose(result)
+      self.maze = np.array(result)
+      self.start = np.array([555,200])
+      self.end = np.array([339,356])
+      
+      print(self.maze)
+      print(self.maze[self.start[0]][self.start[1]])
+      # self.maze = np.array([[0, 1, 0, 0, 0, 0],
+      #             [0, 0, 0, 0, 0, 0],
+      #             [0, 1, 0, 1, 0, 0],
+      #             [0, 1, 0, 0, 1, 0],
+      #             [0, 0, 0, 0, 1, 0]])
+      # self.start = np.array([0, 0])
+      # self.end = np.array([4,5])
+      self.cost = 1
+      self.plan_path = rospy.Service("plan_path",Empty,self.plan_path_callback)
+      self.new_traj = rospy.ServiceProxy("new_trajectory", Trajectory)
+
+    def plan_path_callback(self,msg):
+
+      # self.maze = rospy.get_param("maze")
+      # self.start = rospy.get_param("maze_start")
+      # self.end = rospy.get_param("maze_end")
+
+      self.astar = Astar(self.maze,self.start, self.end,self.cost)
+      self.path_map = np.array(self.astar.main())
+      max_path = np.max(self.path_map,axis=None)
+      print(max_path)
+      min_index = np.where(self.path_map == 0)
+      max_index = np.where(self.path_map == max_path)
+      self.path = np.array([[]])
+      self.path = np.array([[min_index[0][0],min_index[1][0]]])
+      x_list = np.array([min_index[0][0]])
+      y_list = np.array([min_index[1][0]])
+
+      for i in range(max_path):
+        indices = np.array([[np.where(self.path_map==i+1)[0][0],np.where(self.path_map==i+1)[1][0]]])
+        x_list = np.append(x_list,indices[0][0])
+        y_list = np.append(y_list,indices[0][1])
+        self.path = np.append(self.path,indices,axis=0)
+
+      print(self.path_map)
+      print(self.path)
+      print(x_list)
+      print(y_list)
+
+      traj = TrajectoryRequest()
+      traj.x_list = x_list
+      traj.y_list = y_list
+      traj.clear_queue = True
+      traj.rate = 5
+
+      self.new_traj.call(traj)
+
+
+      return EmptyResponse()
+
+
+
+
+if __name__=='__main__': 
+
+    rospy.init_node('plan')
+    Plan()
+    rospy.spin()

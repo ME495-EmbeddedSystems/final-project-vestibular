@@ -1,0 +1,86 @@
+#!/usr/bin/env python3
+'''
+use control theta to control xddot, to get the desired velocity (both in acceleration zone constant zone and deceleration zone)
+
+PUBLISHERS:
+  + 
+SUBSCRIBERS
+  +  
+SERVICES:
+  none
+PARAMETERS
+  + none
+'''
+#imports
+import rospy
+from math import pi
+from balance_board.msg import BoardPose,Ball_pose, PlotPoint
+from balance_board.srv import Gains
+from board_pid import BoardPid
+from std_srvs.srv import Empty
+# import geometry_msgs.msg
+
+class PD:
+    def __init__(self):
+        '''
+        The initiation function of the flip. Initiates subscribers and variables
+        INPUTS:
+            none
+        OUTPUTS:
+            none
+        '''
+
+        # inits publishers, subscribers services
+        self.angle_pub = rospy.Publisher('angle_updates', BoardPose, queue_size=10)
+        self.trigger = rospy.Service('trigger', Empty, self.trigger_callback)
+        self.sender = rospy.Timer(rospy.Duration(1/50), self.sender_callback)
+        self.rate = rospy.Service("period", Gains, self.rate_callback)
+
+        self.x = pi/4
+        self.y = pi/4
+
+        self.period = 0
+
+        self.start_time = rospy.Time.now().to_sec()
+
+    def trigger_callback(self, msg):
+
+        self.x = -self.x
+        self.y = -self.y
+
+
+    def sender_callback(self, msg):
+         # inits new board pose message
+        pose = BoardPose()
+        time = rospy.Time.now().to_sec()
+
+        if not self.period == 0 and (time-self.start_time) > self.period:
+            self.x = -self.x
+            self.y = -self.y
+            self.start_time = time
+
+        # gets new angle values for the board from PID objects
+        pose.theta_x = self.x
+        pose.theta_y = self.y
+        self.angle_pub.publish(pose) 
+
+    def rate_callback(self, msg):
+        self.period = msg.ki 
+
+    
+
+
+        
+    
+
+def main():
+    
+    rospy.init_node('nested_pd_controller', anonymous=True)
+    controller = PD()
+    rospy.spin()
+
+if __name__ == '__main__':
+    try:
+        main()
+    except rospy.ROSInterruptException:
+        pass

@@ -25,8 +25,8 @@ pos_control:
   panda_joint4: 
     pid: {p: 100.0, i: 0.01, d: 10.0}
   panda_joint5: 
-    pid: {p: 100.0, i: 0.01, d: 10.0}
+    pid: {p: 100, i: 0.01, d: 10}
   panda_joint6: 
-    pid: {p: 100.0, i: 0.01, d: 10.0}
+    pid: {p: 100, i: 0.01, d: 10}
   panda_joint7: 
     pid: {p: 5.0, i: 0.01, d: 10.0}

@@ -1,0 +1,5 @@
+std_msgs/Empty empty
+
+---
+
+std_msgs/Int8MultiArray maze_map

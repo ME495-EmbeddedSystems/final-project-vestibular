@@ -9,6 +9,7 @@ project(balance_board)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED
 message_generation
+std_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -49,6 +50,8 @@ add_message_files(
    FILES
    Ball_pose.msg
    BoardPose.msg
+   Path_map.msg
+   RobotState.msg
    PlotPoint.msg
 #   Message1.msg
 #   Message2.msg
@@ -58,6 +61,8 @@ add_message_files(
 add_service_files(
  FILES
  Gains.srv
+ Map_path.srv
+ Trajectory.srv
 #   Service2.srv
 )
 
@@ -71,7 +76,7 @@ add_service_files(
 ## Generate added messages and services with any dependencies listed here
  generate_messages(
    DEPENDENCIES
-#   std_msgs  # Or other packages containing msgs
+   std_msgs  # Or other packages containing msgs
  )
 
 ################################################
@@ -163,12 +168,17 @@ include_directories(
  catkin_install_python(PROGRAMS
    nodes/bamboo_desiredposition
    nodes/balance
-   nodes/joint_controller_interface
+   nodes/ros_control_interface
    nodes/dynamic_trap_controller
    nodes/test_controller
    nodes/pd_controller
    nodes/square
    nodes/circle
+   nodes/waypoints
+   nodes/rci_tuning_controller
+   nodes/trajectory_manager
+   nodes/traj_planner
+   nodes/vision
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 
@@ -211,4 +221,6 @@ include_directories(
 # endif()
 
 ## Add folders to be run by python nosetests
-# catkin_add_nosetests(test)
+if(CATKIN_ENABLE_TESTING)
+   catkin_add_nosetests(tests) 
+endif()

@@ -17,3 +17,6 @@ float64 z_way #(m)
 
 float64[] ball_coord
 float64[] way_coord
+float64[] way2_coord
+
+int32[] border

@@ -4,15 +4,23 @@ import pyrealsense2 as rs
 import numpy as np
 import rospy
 from std_srvs.srv import Empty, EmptyResponse
+# from planner import Astar
+from std_msgs.msg import Int8MultiArray
 from geometry_msgs.msg import Twist, Vector3
 from tf_conversions import transformations
 import tf2_ros
 import geometry_msgs.msg
-from balance_board.msg import Ball_pose
+from balance_board.msg import Ball_pose, Path_map
 import cv2
 import modern_robotics as mr
 import time
 import argparse
+# from balance_board.srv import Map_path
+# from balance_board.srv import Trajectory, TrajectoryRequest
+
+
+from cv_bridge import CvBridge, CvBridgeError
+from sensor_msgs.msg import Image
 #from pupil_apriltags import Detector
 
 class Comp_vis:
@@ -26,28 +34,98 @@ class Comp_vis:
         '''
         self.r=rospy.Rate(60)
         self.pose_pub = rospy.Publisher("/ball_pose",Ball_pose, queue_size=10)
-        
-        # self.at_detector = Detector(families='tag36h11',
-        #                nthreads=1,
-        #                quad_decimate=2.0,
-        #                quad_sigma=0.8,
-        #                refine_edges=1,
-        #                decode_sharpening=0.25,
-        #                debug=0)
+        self.path_pub = rospy.Publisher("/path_map",Image,queue_size=1)
+        self.__map_path = rospy.Service("/map_path",Empty,self.map_path_cb)
+        self.__map_params = rospy.Service("/map_params",Empty,self.map_params_cb)
 
 
-
-        
         # self.lower_orng = np.array([3,233,174])
         # self.upper_orng = np.array([27,255,255])
-        self.lower_orng = np.array([11,145,131])
+        self.lower_orng = np.array([11,145,131]) ### ball
         self.upper_orng = np.array([37,255,227])
 
-        self.lower_bluemark = np.array([74,94,73])
-        self.upper_bluemark = np.array([124,255,174])
+        self.lower_purple = np.array([123,21,90]) #### line
+        self.upper_purple = np.array([141,113,189])
 
+        self.lower_green = np.array([75,39,104]) ### border
+        self.upper_green = np.array([94,254,167])
+
+        self.lower_pink = np.array([157,34,70]) ### waypoint 2
+        self.upper_pink = np.array([180,255,169])
+
+        self.lower_bluemark = np.array([99,87,81]) ### waypoint 1
+        self.upper_bluemark = np.array([116,255,142])
+
+        # self.map = Map_path()
+
+        # # self.map.layout.dim[0].size = 480
+        # # self.map.layout.dim[0].label = "height"
+        # # self.map.layout.dim[0].stride = 640*480
+
+        # # self.map.layout.dim[1].size = 640
+        # # self.map.layout.dim[1].label = "width"
+        # # self.map.layout.dim[1].stride = 640
 
         self.ball_detection()
+
+    def map_params_cb(self,req):
+        self.cost = 1
+        self.maze = self.path
+        self.astar = Astar(self.maze,self.start, self.end,self.cost)
+        self.path_map = np.array(self.astar.main())
+        max_path = np.max(self.path_map,axis=None)
+        # print(max_path)
+        min_index = np.where(self.path_map == 0)
+        max_index = np.where(self.path_map == max_path)
+        self.traj_index = np.array([[]])
+        self.traj_index = np.array([[min_index[0][0],min_index[1][0]]])
+        x_list = np.array([min_index[0][0]])
+        y_list = np.array([min_index[1][0]])
+
+        for i in range(max_path):
+            indices = np.array([[np.where(self.path_map==i+1)[0][0],np.where(self.path_map==i+1)[1][0]]])
+            x_list = np.append(x_list,indices[0][0])
+            y_list = np.append(y_list,indices[0][1])
+            self.traj_index = np.append(self.traj_index,indices,axis=0)
+
+        traj = TrajectoryRequest()
+        traj.x_list = x_list
+        traj.y_list = y_list
+        traj.clear_queue = True
+        traj.rate = 5
+
+        self.new_traj.call(traj)
+
+        # rospy.set_param("/path",self.path)
+        # rospy.set_param("/maze",self.path)
+        # rospy.set_param("/waypoints",self.waypoints)
+        # rospy.set_param("/borders",self.border)
+        # rospy.set_param("/maze_start",self.maze_start)
+        # rospy.set_param("/maze_start",self.maze_end)
+        return EmptyResponse()
+
+
+    def map_path_cb(self,req):
+        mybridge = CvBridge()
+        current_path_map = Image()
+        current_path_map.header = rospy.get_time()
+
+        # self.map.data = self.path.flatten()
+        # return self.map
+
+        h,w = to_pub.shape()
+        current_path_map.height = h
+        current_path_map.width = w
+        current_path_map.encoding='passthrough'
+        current_path_map.data = mybridge.cv2_to_imgmsg(to_pub,encoding = 'passthrough')
+
+        print("Path/Maze map reset")
+        # self.path_pub.publish(mybridge.cv2_to_imgmsg(to_pub,encoding = 'passthrough'))
+        # self.path_pub.publish(to_pub)
+        self.path_pub.publish(current_path_map)
+
+
+        return EmptyResponse()
 
 
 
@@ -116,6 +194,13 @@ class Comp_vis:
         self.high_H_name = 'High H'
         self.high_S_name = 'High S'
         self.high_V_name = 'High V'
+
+        #### Parameter variable inits
+        self.path=[]
+        self.waypoints=[]
+        self.border = []
+        self.maze_start = []
+        self.maze_end = []
         
         # parser = argparse.ArgumentParser(description='Code for Thresholding Operations using inRange tutorial.')
         # parser.add_argument('--camera', help='Camera devide number.', default=0, type=int)
@@ -196,13 +281,14 @@ class Comp_vis:
                 # Get frameset of color and depth
                 frames = pipeline.wait_for_frames()
                 # frames.get_depth_frame() is a 640x360 depth image
-
+                # print("checkpoint 1")
                 # Align the depth frame to color frame
                 aligned_frames = align.process(frames)
 
                 # Get aligned frames
                 aligned_depth_frame = aligned_frames.get_depth_frame() # aligned_depth_frame is a 640x480 depth image
                 color_frame = aligned_frames.get_color_frame()
+                # print("checkpoint 1")
 
                 # Validate that both frames are valid
                 if not aligned_depth_frame or not color_frame:
@@ -210,48 +296,71 @@ class Comp_vis:
 
                 depth_image = np.asanyarray(aligned_depth_frame.get_data())
                 color_image = np.asanyarray(color_frame.get_data())
+                # print("checkpoint 1")
 
                 # Remove background - Set pixels further than clipping_distance to grey
                 grey_color = 153
                 depth_image_3d = np.dstack((depth_image,depth_image,depth_image)) #depth image is 1 channel, color is 3 channels
-                bg_removed = np.where((depth_image_3d > clipping_distance) | (depth_image_3d <= 0), grey_color, color_image)
+                ######################3
+                bg_removed = color_image
+                # bg_removed = np.where((depth_image_3d > clipping_distance) | (depth_image_3d <= 0), grey_color, color_image)
 
                 hsv = cv2.cvtColor(bg_removed, cv2.COLOR_BGR2HSV)
+                # print("checkpoint 1")
                 
                 frame_threshold = cv2.inRange(hsv, (self.low_H, self.low_S, self.low_V), (self.high_H, self.high_S, self.high_V))
                 # define range of blue color in HSV
                 # print(self.low_H)
-                print("checkpoint 1")
+                # print("checkpoint 1")
                 # Threshold the HSV image to get only purple colors
-                mask = cv2.inRange(hsv, self.lower_orng, self.upper_orng)
-                way_mask = cv2.inRange(hsv, self.lower_bluemark, self.upper_bluemark)
+                try:
+                    mask = cv2.inRange(hsv, self.lower_orng, self.upper_orng)
+                except:
+                    print("orange fail")
+                try:
+                    way_mask = cv2.inRange(hsv, self.lower_bluemark, self.upper_bluemark)
+                except:
+                    print("blue fail")
+                try:
+                    way2_mask = cv2.inRange(hsv, self.lower_pink, self.upper_pink)
+                except:
+                    print("pink fail")
+                try:
+                    border_mask = cv2.inRange(hsv, self.lower_green, self.upper_green)
+                except:
+                    print("green fail")
+                try:
+                    path_mask = cv2.inRange(hsv, self.lower_purple, self.upper_purple)
+                except:
+                    print("purple fail")
+
+                ###########################
+
+                
                 # Bitwise-AND mask and original image
                 res = cv2.bitwise_and(bg_removed,bg_removed, mask= mask)
                 # cv2.imshow('frame',bg_removed)
                 # cv2.imshow('mask',mask)
                 # cv2.imshow('res',res)
-                print("checkpoint 2")
+                # print("checkpoint 2")
                 ##
                 res2 = cv2.bitwise_and(bg_removed,bg_removed, mask= way_mask)
                 # cv2.imshow('waypoint',res2)
-                print("checkpoint 3")
+                # print("checkpoint 3")
                 # print(frame_threshold)
                 cv2.imshow(self.window_detection_name, frame_threshold)
                 # cv2.imshow(self.window_detection_name)
 
                 contours, hierarchy = cv2.findContours(mask , cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
                 way_contours, way_hierarchy = cv2.findContours(way_mask , cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+                way2_contours, way2_hierarchy = cv2.findContours(way2_mask , cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+                border_contours, border_hierarchy = cv2.findContours(border_mask , cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+                path_contours, path_hierarchy = cv2.findContours(path_mask , cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
                 #print(contours)
                 
-                # ################################### Apriltag attempt
-                # try:
-                #     tags = self.at_detector.detect(color_image, estimate_tag_pose=True, camera_params=[613.387,613.304,325.264,235.462], tag_size=0.0711)#######################
-                #     print(tags)
-                # except:
-                #     print("Apriltags fail")
 
-                ####################################### ball contours
-                print("checkpoint 4")
+                ####################################### orange ball contours
+                # print("checkpoint 4")
                 try:
                     
                     try:
@@ -294,9 +403,9 @@ class Comp_vis:
                         print("pixel to point issue")
                 except:
                     print("sum ting wong")
-                cv2.drawContours(bg_removed, contours, -1, (0,255,0),3)
+                cv2.drawContours(bg_removed, contours, -1, (51,153,255),3)
 
-                ############################################## Waypoint contours
+                ##############################################  blue Waypoint 
                 try:
                     try:
                         way_c = max(way_contours,key=cv2.contourArea)
@@ -314,12 +423,11 @@ class Comp_vis:
                         way_center = (int(way_cx),int(way_cy))
                     except:
                         print("waypoint issue with cxcy")
-                    cv2.circle(bg_removed, way_center, 10,(255,0,0),-1)
-                    
+                    cv2.circle(bg_removed, way_center, 10,(0,0,255),-1)
                     try:
                         way_depth = depth_image[way_cy][way_cx]
                         #print(f"pix coords {cx},{cy}")
-                        print(f"waypoint depth of centroid is {depth}")
+                        print(f"waypoint depth of centroid is {way_depth}")
                     except:
                         print("waypoint depth issue")
                     try:
@@ -330,13 +438,93 @@ class Comp_vis:
                         print("waypoint pixel to point issue")
                 except:
                     print("sum ting wong waypoints")
+                cv2.drawContours(bg_removed, way_contours, -1, (255,0,0),3)
 
-  
-                cv2.drawContours(bg_removed, way_contours, -1, (0,255,0),3)
+                ################################################################### pink waypoint 2
+                try:
+                    try:
+                        way2_c = max(way2_contours,key=cv2.contourArea)
+                        #print(f"this is c = {c}")
+                    except:
+                        print("waypoint issue is with wayppoint contours")
+                        way2_c = way2_c*0
+                    try:
+                        way2_M = cv2.moments(way2_c)
+                    except:
+                        print("waypoint issue is with moments")
+                    try:
+                        way2_cx = int(way2_M['m10']/way2_M['m00'])
+                        way2_cy = int(way2_M['m01']/way2_M['m00'])
+                        way2_center = (int(way2_cx),int(way2_cy))
+                    except:
+                        print("waypoint issue with cxcy")
+                    cv2.circle(bg_removed, way2_center, 10,(0,0,255),-1)
+                    try:
+                        way2_depth = depth_image[way2_cy][way2_cx]
+                        #print(f"pix coords {cx},{cy}")
+                        print(f"waypoint depth of centroid is {way2_depth}")
+                    except:
+                        print("waypoint depth issue")
+                    try:
+                        way2_coord = rs.rs2_deproject_pixel_to_point(intr,[way2_cx,way2_cy],way2_depth)
+                        print(way2_coord)
+
+                    except:
+                        print("waypoint pixel to point issue")
+                except:
+                    print("sum ting wong waypoint 2")
+                cv2.drawContours(bg_removed, way2_contours, -1, (255,0,255),3)
+
+
+                ################################################################### Green border
+                try:
+                    try:
+                        border_c = max(border_contours,key=cv2.contourArea)
+                        #print(f"this is c = {c}")
+                    except:
+                        print("waypoint issue is with wayppoint contours")
+                        border_c = border_c*0
+                except:
+                    print("sum ting wong waypoint 2")
+                cv2.drawContours(bg_removed, border_contours, -1, (0,204,0),3)
+
+
+                ################################################################### purple path
+                try:
+                    try:
+                        path_c = max(path_contours,key=cv2.contourArea)
+                        #print(f"this is c = {c}")
+                    except:
+                        print("waypoint issue is with wayppoint contours")
+                        path_c = path_c*0
+                except:
+                    print("sum ting wong waypoint 2")
+                cv2.drawContours(bg_removed, path_contours, -1, (255,0,127),3)
+
+
+
+
+
+                ####################################### parameter zone
+                print("loading parameters")
+                try:
+                    self.path=path_mask
+                    # self.maze = maze_mask
+                    self.waypoints = [[way_cx,way_cy,way_depth],[way2_cx,way2_cy,way2_depth]]
+                    self.border = border_mask
+                    self.maze_start = [way_cx,way_cy]
+                    self.maze_end = [way2_cx,way2_cy]
+                except:
+                    print("Parameter fail!!!")
+                print("loaded parameters")
+
+                
+                
+
+
 
 
                 ###### populate publisher msg
-                ##################################    NEEDS Transform!!!!
                 try:
                     poses.x3 = poses.x2
                     poses.y3 = poses.y2
@@ -362,7 +550,7 @@ class Comp_vis:
                     print("waypoint coord no pub")
                 
                 try:
-                    print(poses)
+                    # print(poses)
 
                     poses.x = cx
                     poses.y = cy
@@ -380,7 +568,7 @@ class Comp_vis:
                 
                     
                 
-                print(f"Time {rospy.get_time}")
+                # print(f"Time {rospy.get_time}")
                 print(f"iteration {iteration}")
                 iteration +=1
 
@@ -393,7 +581,8 @@ class Comp_vis:
                 images = np.hstack((bg_removed, depth_colormap))
 
                 cv2.namedWindow('Align Example', cv2.WINDOW_NORMAL)
-                cv2.imshow('Align Example', images)
+                # cv2.imshow('Align Example', images)
+                cv2.imshow('Align Example', bg_removed)
                 key = cv2.waitKey(1)
                 # Press esc or 'q' to close the image window
                 if key & 0xFF == ord('q') or key == 27:
