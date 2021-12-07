@@ -1,0 +1,38 @@
+actions: []
+authors: ''
+brief: ''
+bugtracker: ''
+depends:
+- message_runtime
+- controller_manager
+- robot_state_publisher
+- panda_moveit_config
+- joint_state_publisher
+- rostest
+- franka_control
+- rviz
+- rosunit
+- franka_gazebo
+- franka_description
+- catkin
+- xacro
+- tf2_ros
+- std_msgs
+- rospy
+- realsense2_camera
+- franka_gripper
+- apriltag_ros
+- message_generation
+description: The balance_board package
+license: MIT
+maintainers: devbhura <devbhura@todo.todo>, Daelan Roosa <richardroosa2022@u.northwestenr.edu>
+msgs:
+- Ball_pose
+- RobotState
+- BoardPose
+package_type: package
+repo_url: ''
+srvs:
+- Trajectory
+- Gains
+url: ''

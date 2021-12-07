@@ -1,11 +1,31 @@
 #!/usr/bin/env python3
 
+'''
+High level PD controller that takes as input the position of the ball on the board and outputs deisred angles of the board.
+
+PUBLISHERS:
+
+  + ball_pose (Ball_pose)
+    ~   Publishes current ball position.
+
+SERVICES:
+  
+  + line_follow (Empty)
+    ~   Follows a drawn line from start point to end point
+
+  + maze_follow (Empty)
+    ~   Follows a drawn maze from start point to end point
+
+PARAMETERS
+
+  + none
+'''
+
 import pyrealsense2 as rs
 import numpy as np
 import rospy
 from std_srvs.srv import Empty, EmptyResponse
 from matplotlib import pyplot as plt
-from planner import Astar
 from maze_solve import Solver
 from std_msgs.msg import Int8MultiArray
 from geometry_msgs.msg import Twist, Vector3
@@ -35,11 +55,10 @@ class Comp_vis:
             none
         '''
         self.r=rospy.Rate(60)
-        self.pose_pub = rospy.Publisher("/ball_pose",Ball_pose, queue_size=10)
-        self.path_pub = rospy.Publisher("/path_map",Image,queue_size=1)
-        self.follow_line = rospy.Service("/maze_follow",Empty,self.map_follow_cb)
+        self.pose_pub = rospy.Publisher("ball_pose",Ball_pose, queue_size=10)
+        self.follow_line = rospy.Service("maze_follow",Empty,self.map_follow_cb)
         self.new_traj = rospy.ServiceProxy("new_trajectory", Trajectory)
-        self.__line_follow = rospy.Service("/line_follow",Empty,self.line_follow)
+        self.__line_follow = rospy.Service("line_follow",Empty,self.line_follow)
         self.maze_soln = np.zeros((480, 640))
 
 
@@ -147,6 +166,8 @@ class Comp_vis:
         traj.rate = 20
 
         self.new_traj.call(traj)
+
+        return EmptyResponse()
 
 
     def on_low_H_thresh_trackbar(self,val):

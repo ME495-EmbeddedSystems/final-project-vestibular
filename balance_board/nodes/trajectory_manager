@@ -47,10 +47,12 @@ class TrajectoryManager:
         self.y_queue = []
         self.repeat = False
         self.wait = True
-        self.pos_tol = 5
-        self.cur_x = 300
-        self.cur_y = 300
-        self.base_rate = 50
+        self.pos_tol = rospy.get_param("~pos_tol")
+        self.cur_x = rospy.get_param("~init_x")
+        self.cur_y = rospy.get_param("~init_y")
+        self.base_rate = rospy.get_param("~update_frequency")
+        self.x_off = rospy.get_param("~x_offset")
+        self.y_off = rospy.get_param("~y_offset")
         self.period = 0
         self.converged = False
         self.rci_state= False
@@ -135,8 +137,8 @@ class TrajectoryManager:
             self.cur_y = new_y
             self.start_time = time
 
-        new_target.x_way = self.cur_x + 50
-        new_target.y_way = self.cur_y + 50
+        new_target.x_way = self.cur_x + self.x_off
+        new_target.y_way = self.cur_y + self.y_off
         self.target.publish(new_target)
 
     def rci_state_callback(self, msg):

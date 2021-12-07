@@ -87,7 +87,9 @@ class BalanceServTests(unittest.TestCase):
         self.angle_update.publish(new_angle)
         time.sleep(1)
         state = rospy.wait_for_message('pos_control/command', Float64MultiArray)
-        self.assertEqual(state.data, (0.0, -pi/2, pi/2, -pi/2, -pi/2+pi/4, pi/2+pi/4, pi/4))
+        a = (0.0, -pi/2, pi/2, -pi/2, -pi/2+pi/4, pi/2+pi/4, pi/4)
+        for i in range(len(a)):
+            self.assertAlmostEqual(state.data[i], a[i], delta=0.001)
 
     def test_neg_lims(self):
         """ Testing that RCI respects negative joint limits
@@ -103,25 +105,10 @@ class BalanceServTests(unittest.TestCase):
         self.angle_update.publish(new_angle)
         time.sleep(1)
         state = rospy.wait_for_message('pos_control/command', Float64MultiArray)
-        self.assertEqual(state.data, (0.0, -pi/2, pi/2, -pi/2, -pi/2-pi/4, pi/2-pi/4, pi/4))
+        a = (0.0, -pi/2, pi/2, -pi/2, -pi/2-pi/4, pi/2-pi/4, pi/4)
+        for i in range(len(a)):
+            self.assertAlmostEqual(state.data[i], a[i], delta=0.001)
 
-    # def test_translator_cur_angles(self):
-    #     """ Testing that RCI republishes current joint angles and velocites for plotting in rqt_gui
-    #     """
-    #     rospy.wait_for_service("start", timeout=None)
-    #     pub = rospy.Publisher("joint_states", JointState)
-    #     cur_ang = rospy.Subscriber('cur_angles', BoardPose, self.angle_cb)
-    #     cur_vel = rospy.Subscriber('cur_vels', BoardPose, self.vel_cb)
-    #     new_state = JointState()
-    #     new_state.position = [0, -pi/2, pi/2, -pi/2, -pi/2, pi/2, pi/4]
-    #     new_state.velocity = 7*[0]
-    #     time.sleep
-    #     pub.publish(new_state)
-    #     time.sleep(1)
-    #     #self.assertEqual(self.cur_theta_x, 0.0)
-    #     #self.assertEqual(self.cur_theta_y, 0.0)
-    #     self.assertEqual(self.cur_vel_x, 0.0)
-    #     self.assertEqual(self.cur_vel_y, 0.0)
 
     # Tests for pd_controller ####################################################################
 

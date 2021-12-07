@@ -5,7 +5,8 @@
         <arg name="launch_franka_control" value="false"/>
     </include>
     <node name="ros_control_interface" pkg="balance_board" type="ros_control_interface">
-        <rosparam command="load" file="$(find balance_board)/config/interface_params.yaml"/>
+        <rosparam command="load" file="$(find balance_board)/config/rci_params.yaml"/>
     </node>
+    
   <rosparam command="load" file="$(find balance_board)/config/controllers.yaml" />
 </launch>

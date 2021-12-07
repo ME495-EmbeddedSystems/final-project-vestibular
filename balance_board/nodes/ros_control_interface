@@ -88,6 +88,8 @@ class RosControlInterface:
         # reads in parameters
         # self.max_increment = rospy.get_param("~max_angle_increment")
         self.pub_freq = rospy.get_param("~joint_update_frequency")
+        self.min_lim = rospy.get_param("~min_lim")
+        self.max_lim = rospy.get_param("~max_lim")
 
         # inits subscribers/timers
 
@@ -112,7 +114,6 @@ class RosControlInterface:
         self.cur_theta_y = 0
         self.cur_vel_x = 0
         self.cur_vel_y = 0
-        self.max_vel = 10
 
         # inits services
         self.translate = rospy.Subscriber('joint_states', JointState, self.translator_callback)
@@ -150,8 +151,8 @@ class RosControlInterface:
             none
         '''
         # sets new desired angles from high level controller
-        self.theta_x = max(-pi/4, min(pi/4, message.theta_x))
-        self.theta_y = max(-pi/4, min(pi/4, message.theta_y))
+        self.theta_x = max(self.min_lim, min(self.max_lim, message.theta_x))
+        self.theta_y = max(self.min_lim, min(self.max_lim, message.theta_y))
 
     def translator_callback(self, message):
         '''
