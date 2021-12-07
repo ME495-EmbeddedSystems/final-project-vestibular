@@ -21,14 +21,16 @@ Devesh Bhura, Davin Landry, Kevin Nella, Daelan Roosa, Haozhi Zhang
 
 Waveform Path:
 
-<div style="width:100%;height:0px;position:relative;padding-bottom:56.250%;"><iframe src="https://streamable.com/e/dypi1a" frameborder="0" width="100%" height="100%" allowfullscreen style="width:100%;height:100%;position:absolute;left:0px;top:0px;overflow:hidden;"></iframe></div>
+https://user-images.githubusercontent.com/58793794/144996279-b2edaccd-4047-451f-a67d-3e8997f8249b.mp4
 
 NU Path:
-<div style="width:100%;height:0px;position:relative;padding-bottom:56.250%;"><iframe src="https://streamable.com/e/8c7ml4" frameborder="0" width="100%" height="100%" allowfullscreen style="width:100%;height:100%;position:absolute;left:0px;top:0px;overflow:hidden;"></iframe></div>
+
+https://user-images.githubusercontent.com/58793794/144996145-94c04362-2a3c-4e93-9429-ed1feb0a0459.mp4
 
 Maze:
 
-<div style="width:100%;height:0px;position:relative;padding-bottom:56.250%;"><iframe src="https://streamable.com/e/mp91uu" frameborder="0" width="100%" height="100%" allowfullscreen style="width:100%;height:100%;position:absolute;left:0px;top:0px;overflow:hidden;"></iframe></div>
+https://user-images.githubusercontent.com/58793794/144996319-a0f77259-cbab-446e-96de-af9a73040963.mp4
+
 
 ### Quickstart Guide
 
