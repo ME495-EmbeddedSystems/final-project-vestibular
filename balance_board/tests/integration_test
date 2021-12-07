@@ -2,46 +2,40 @@
 import unittest
 import balance_board
 import rospy
-from balance_board.srv import 
+from balance_board.srv import Gains, Trajectory
+from board_pid import BoardPid
 
 
 class BalanceServTests(unittest.TestCase):
 
     def test_callSetGains(self):
-        rospy.wait_for_service('reset', timeout=None)
-        reset_position = rospy.ServiceProxy("reset", Reset)
-        reset_input = ResetRequest()
-        reset_input.x = 0.217220
-        reset_input.y = -0.000993
-        reset_input.z = 0.025
-        reset_input.r = 0
-        reset_input.p = 0
-        reset_input.yaw = 0
-        reset_input.clear = "clear"
-        reset_position(reset_input)
-        print("testing Reset service")
+        rospy.wait_for_service('set_gains', timeout=None)
+        set_gains = rospy.ServiceProxy("set_gains", Gains)
+        ec = set_gains(kp=0.001, ki= 0, kd=0.001)
+        self.assertEquals(ec, 0)
 
-    def test_callNew_Traj_same_len(self):
-        rospy.wait_for_service('step', timeout=None)
-        self.step = rospy.ServiceProxy("step", Step)
-        step_input = StepRequest()
-        step_input.x = -1
-        step_input.y = 0.2
-        step_input.z = -0.1
-        step_input.grip_state = "Closed"
-        ec = self.step(step_input)
-        self.assertEquals(ec, -1)
 
-    def test_callNew_Traj_diff_len(self):
-        rospy.wait_for_service("step", timeout=None)
-        self.step = rospy.ServiceProxy("step", Step)
-        step_input_succ = StepRequest()
-        step_input_succ.x = 0.2
-        step_input_succ.y = 0.2
-        step_input_succ.z = 0.2
-        step_input_succ.grip_state = "Open"
-        ec = self.step(step_input_succ)
-        self.assertEquals(ec, 1)
+    # def test_callNew_Traj_same_len(self):
+    #     rospy.wait_for_service('new_trajectory', timeout=None)
+    #     self.step = rospy.ServiceProxy("new_trajectory", Trajectory)
+    #     step_input = StepRequest()
+    #     step_input.x = -1
+    #     step_input.y = 0.2
+    #     step_input.z = -0.1
+    #     step_input.grip_state = "Closed"
+    #     ec = self.step(step_input)
+    #     self.assertEquals(ec, -1)
+
+    # def test_callNew_Traj_diff_len(self):
+    #     rospy.wait_for_service("new_trajectory", timeout=None)
+    #     self.step = rospy.ServiceProxy("new_trajectory", Trajectory)
+    #     step_input_succ = StepRequest()
+    #     step_input_succ.x = 0.2
+    #     step_input_succ.y = 0.2
+    #     step_input_succ.z = 0.2
+    #     step_input_succ.grip_state = "Open"
+    #     ec = self.step(step_input_succ)
+    #     self.assertEquals(ec, 1)
 
 
 if __name__== "__main__":
