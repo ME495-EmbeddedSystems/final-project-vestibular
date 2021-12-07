@@ -17,6 +17,10 @@ Team members:
 
 Devesh Bhura, Davin Landry, Kevin Nella, Daelan Roosa, Haozhi Zhang
 
+### Video Demo
+
+
+
 ### Quickstart Guide
 
 1. Set up robot and connect to work station: https://nu-msr.github.io/me495_site/franka.html; Connect real sense camera.
@@ -67,5 +71,7 @@ Devesh Bhura, Davin Landry, Kevin Nella, Daelan Roosa, Haozhi Zhang
 ### Computer Vision
 
 ### Maze Solver Algorithm 
+
+
 
 ### Future Improvement 
