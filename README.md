@@ -6,11 +6,42 @@ This is a ROS project developed as part of ME495 - Embedded Systems in Robotics 
 
 The goal of this project is to control a ping-pong ball by using Franka Panda robot  to manipulate a white board. 
 
-Github link:
+Generally, there are two types of tasks that our controlling of ping-pong ball can be achieved:
+
+1. Follow a line trajectory drawn on a white board. 
+2. Follow the path solved by our maze solver algorithm, with a maze drawn on a white board. 
+
+The project integrates two main portions. First part is the perception: we use real sense camera as our sensor to capture the transient positions of ball and board, and using OpenCV library processes the sensing images. Second part is the control: there are two PD controllers we are implementing to control the ping-pong ball following the target trajectory on the white board. The higher level control loop takes ball positions as input and outputs desired angles of corresponding two arm joints.  Then the updated joint angles received by the low level control loop. By tuning PD gains, this loop is able to send desired efforts to robot arm through ros_control topic.  
+
+Team members:
+
+Devesh Bhura, Davin Landry, Kevin Nella, Daelan Roosa, Haozhi Zhang
+
+### Video Demo
+
+
 
 ### Quickstart Guide
 
+1. Set up robot and connect to work station: https://nu-msr.github.io/me495_site/franka.html; Connect real sense camera.
+
+2. Launch all nodes needed: `roslaunch balance_board maze.launch`
+
+3. Set robot to home position: `rosservice call /home`
+
+4. Two options:
+
+   a. Draw a line trajectory on board, then `rosservice call /line_follow`
+
+   b. Draw a maze on board, then `rosservice call /maze_follow`
+
+5. After trajectory generated, start the play: `rosservice call /start`
+
+6. Finished play, then `rosservice call /stop`
+
 ### Package Details
+
+`balance_board`: main ros package
 
 `maze.launch`, the main launch file including: 
 
@@ -37,3 +68,12 @@ Github link:
 
  ![img](https://documents.lucid.app/documents/d9cacb50-e613-4a57-96a8-e48c03650f00/pages/0_0?a=542&x=-1&y=40&w=1182&h=881&store=1&accept=image%2F*&auth=LCA%2084f4d8bb0bc569761947bb638a61287baa8fa32d-ts%3D1638817068)
 
+### Computer Vision
+
+### Maze Solver Algorithm 
+
+
+
+### Future Improvement 
+
+When we set our start position on the corners of board, sometimes the ball is hard to be balanced initially and could cause drastic motion of robot arm. One way to solve this issue might be adding more dimensions in our control by using more joints to achieve more dynamical balance when putting the ball in  any position. 
