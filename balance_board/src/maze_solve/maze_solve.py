@@ -1,3 +1,15 @@
+""" Package that solves the maze
+
+Input
+    maze - An array of the maze map with the walls and free space points assigned a certain value
+    start - The index of the start point
+    end - The index of the end point
+
+Output 
+    x_list - list of first indices of the calculated trajectory
+    y_list - list of second indices of the calculated trajectory
+"""
+
 from re import X
 import numpy as np
 import matplotlib.pyplot as plt

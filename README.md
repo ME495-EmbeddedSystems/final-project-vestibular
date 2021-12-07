@@ -83,6 +83,7 @@ https://user-images.githubusercontent.com/58793794/144996319-a0f77259-cbab-446e-
 
 ### Maze Solver Algorithm 
 
+The Breadth First search method is used to solve the maze and generate a trajectory for the ball to follow. To do so, the algorithm computes two cost maps, one where the points farthest away from the walls of the maze are assigned the lowest value, and another cost map that assigns higher value to the points furthest away from the starting point. The algorithm adds these two maps and does gradient descent from the start point to the goal, interating through the neighboring cells and finding a path. 
 
 
 ### Future Improvement 
