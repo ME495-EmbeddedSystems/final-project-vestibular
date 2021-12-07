@@ -5,7 +5,7 @@ Used for running intergration tests, to offer a "dummy" version of a surface usu
 SERVICES:
   + "controller_manager/switch_controller" (controller_manager_msgs/SwitchController)  
     
-    ~ Dummy service that ros_control_interface requires be offered before it fully initializes. Returns True.
+    ~ Dummy service that ros_control_interface require be offered before it fully initializes. Returns True.
 
 '''
 #imports
