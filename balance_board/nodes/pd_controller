@@ -25,7 +25,17 @@ SERVICES:
 
 PARAMETERS
 
-  + none
+  + ~kp
+    ~ proportional gain
+
+  + ~ki
+    ~ integral gain
+
+  + ~kd
+    ~ derivative gain
+
+  + ~derivative_smoothing
+    ~ number of frames to average to smooth error derivative
 '''
 #imports
 import rospy

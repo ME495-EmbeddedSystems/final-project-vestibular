@@ -41,8 +41,15 @@ SERVICES:
 
 PARAMETERS:
 
-  + ~pub_freq (Float64)
+  + ~pub_freq 
     ~   Angle target publishing frequency
+
+  + ~min_lim 
+    ~   minimum board angle
+
+  + ~max_lim 
+    ~   maximum board angle
+
 '''
 
 import rospy

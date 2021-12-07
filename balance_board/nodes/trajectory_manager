@@ -22,7 +22,23 @@ SERVICES:
 
 PARAMETERS
 
-  + none
+  + ~pos_tol
+    ~ position tolerance for waypoint convergence
+
+  + ~init_x
+    ~ initial x target
+
+  + ~init_y
+    ~ initial y target
+
+  + ~update_frequency
+    ~ frequency to publish new targets at
+
+  + ~x_offset
+    ~ x offset between vision position and true position
+
+  + ~y_offset
+    ~ y offset between vision position and true position
 '''
 #imports
 import rospy
