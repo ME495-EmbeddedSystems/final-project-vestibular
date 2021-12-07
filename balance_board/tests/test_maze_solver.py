@@ -1,11 +1,20 @@
+"""
+Unittest for the maze_solve package
+
+Inputs
+    Solver - calls the Solver class in the maze_solve package
+
+"""
 import rospy
 import unittest
-from board_pid import BoardPid
 from maze_solve import Solver
 import numpy as np
 
 class MazeTest(unittest.TestCase):
     def small_maze_test(self):
+        """ Tests if the maze_solver solves this maze and returns the x and y indices
+            as a list
+        """
         maze = np.array([[0,0, 0, 0, 0, 0, 0, 0],
                         [0, 0, 1, 0, 0, 0, 0, 0],
                         [0, 0, 0, 0, 0, 0, 0, 0],

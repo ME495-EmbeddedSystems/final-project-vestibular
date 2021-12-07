@@ -50,9 +50,7 @@ add_message_files(
    FILES
    Ball_pose.msg
    BoardPose.msg
-   Path_map.msg
    RobotState.msg
-   PlotPoint.msg
 #   Message1.msg
 #   Message2.msg
 )
@@ -61,7 +59,6 @@ add_message_files(
 add_service_files(
  FILES
  Gains.srv
- Map_path.srv
  Trajectory.srv
 #   Service2.srv
 )
@@ -111,7 +108,7 @@ add_service_files(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES balance_board
-  CATKIN_DEPENDS message_runtime
+  CATKIN_DEPENDS message_runtime std_msgs
 #  DEPENDS system_lib
 )
 
@@ -166,18 +163,10 @@ include_directories(
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
  catkin_install_python(PROGRAMS
-   nodes/bamboo_desiredposition
-   nodes/balance
    nodes/ros_control_interface
-   nodes/dynamic_trap_controller
-   nodes/test_controller
    nodes/pd_controller
-   nodes/square
-   nodes/circle
    nodes/waypoints
-   nodes/rci_tuning_controller
    nodes/trajectory_manager
-   nodes/traj_planner
    nodes/vision
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
@@ -222,5 +211,7 @@ include_directories(
 
 ## Add folders to be run by python nosetests
 if(CATKIN_ENABLE_TESTING)
-   catkin_add_nosetests(tests) 
+   catkin_add_nosetests(tests)
+   find_package(rostest REQUIRED)
+   add_rostest(tests/board.test)
 endif()
