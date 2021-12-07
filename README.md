@@ -75,3 +75,5 @@ Devesh Bhura, Davin Landry, Kevin Nella, Daelan Roosa, Haozhi Zhang
 
 
 ### Future Improvement 
+
+When we set our start position on the corners of board, sometimes the ball is hard to be balanced initially and could cause drastic motion of robot arm. One way to solve this issue might be adding more dimensions in our control by using more joints to achieve more dynamical balance when putting the ball in  any position. 
