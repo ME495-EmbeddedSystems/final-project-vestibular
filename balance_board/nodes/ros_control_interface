@@ -54,8 +54,6 @@ class JointControllerInterface:
         self.traj_pub = rospy.Publisher("position_joint_trajectory_controller/command",JointTrajectory,queue_size = 1)
         # position control command topic
         self.pos_pub = rospy.Publisher("pos_control/command", Float64MultiArray, queue_size=10)
-        # plotting topic
-        self.plotter = rospy.Publisher("plot_log", PlotPoint, queue_size=10)
         
 
         # inits disired angles to home position
@@ -69,11 +67,12 @@ class JointControllerInterface:
         self.max_vel = 10
 
         # inits services
+        self.translate = rospy.Subscriber('joint_states', JointState, self.translator_callback)
         self.enable = rospy.Service("start", Empty, self.enable_callback)
         self.disable = rospy.Service("stop", Empty, self.disable_callback)
         self.home = rospy.Service("home", Empty, self.home_callback)
         self.rci_state = rospy.Publisher("rci_state", RobotState, queue_size=10)
-        self.translate = rospy.Subscriber('joint_states', JointState, self.translator_callback)
+        
 
         rospy.wait_for_service("controller_manager/switch_controller")
         self.switch = rospy.ServiceProxy("controller_manager/switch_controller", SwitchController)

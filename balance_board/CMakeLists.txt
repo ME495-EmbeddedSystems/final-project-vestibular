@@ -165,9 +165,9 @@ include_directories(
  catkin_install_python(PROGRAMS
    nodes/ros_control_interface
    nodes/pd_controller
-   nodes/waypoints
    nodes/trajectory_manager
    nodes/vision
+   nodes/fake_franka
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 

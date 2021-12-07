@@ -1,0 +1,36 @@
+#!/usr/bin/env python3
+'''
+use control theta to control xddot, to get the desired velocity (both in acceleration zone constant zone and deceleration zone)
+
+PUBLISHERS:
+  + 
+SUBSCRIBERS
+  +  
+SERVICES:
+  none
+PARAMETERS
+  + none
+'''
+#imports
+import rospy
+from controller_manager_msgs.srv import SwitchController
+# import geometry_msgs.msg
+
+class FakeFranka:
+    def __init__(self):
+        self.service = rospy.Service("controller_manager/switch_controller", SwitchController, self.fake_switch_cb)
+       
+    def fake_switch_cb(self, msg):
+        return True
+
+def main():
+    
+    rospy.init_node('fake_franka', anonymous=True)
+    ff = FakeFranka()
+    rospy.spin()
+
+if __name__ == '__main__':
+    try:
+        main()
+    except rospy.ROSInterruptException:
+        pass

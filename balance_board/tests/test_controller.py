@@ -7,6 +7,7 @@ Inputs
 """
 import rospy
 import unittest
+import time
 from board_pid import BoardPid
 
 class ControllerTest(unittest.TestCase):
@@ -44,6 +45,57 @@ class ControllerTest(unittest.TestCase):
 
         value = 255
         self.assertEquals(controller.get(value),0)
+    
+    def testcontrollerproportional(self):
+        """ Tests for proportional error gain
+        """
+        Kp = 1
+        Ki = 0
+        Kd = 0
+        target = 0
+        controller = BoardPid(
+            kp=Kp,
+            kd=Kd,
+            ki=Ki,
+            target=target
+        )
+
+        value = 1
+        self.assertEquals(controller.get(value),-1.0)
+
+    def testcontrollerintegral(self):
+        """ Tests for integral error gain
+        """
+        Kp = 0
+        Ki = 1
+        Kd = 0
+        target = 0
+        controller = BoardPid(
+            kp=Kp,
+            kd=Kd,
+            ki=Ki,
+            target=target
+        )
+        controller.get(1)
+        time.sleep(1)
+        self.assertAlmostEquals(controller.get(1),-0.5, delta=0.01)
+
+    def testcontrollerderivative(self):
+        """ Tests for derivative error gain
+        """
+        Kp = 0
+        Ki = 0
+        Kd = 1
+        target = 0
+        controller = BoardPid(
+            kp=Kp,
+            kd=Kd,
+            ki=Ki,
+            target=target
+        )
+        controller.get(0)
+        time.sleep(1)
+        self.assertAlmostEquals(controller.get(1),-1.0, delta=0.01)
 
 
 

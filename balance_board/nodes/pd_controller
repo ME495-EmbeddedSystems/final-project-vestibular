@@ -13,10 +13,9 @@ PARAMETERS
 '''
 #imports
 import rospy
-from balance_board.msg import BoardPose,Ball_pose, PlotPoint, RobotState
+from balance_board.msg import BoardPose,Ball_pose, RobotState
 from balance_board.srv import Gains
 from board_pid import BoardPid
-import time
 # import geometry_msgs.msg
 
 class PD:
@@ -37,9 +36,7 @@ class PD:
         self.angle_pub = rospy.Publisher('angle_updates', BoardPose, queue_size=10)
         self.vision_system = rospy.Subscriber("/ball_pose", Ball_pose, self.vision_callback)
         self.target = rospy.Subscriber('target', Ball_pose, self.target_callback)
-        self.plotter = rospy.Publisher('plot_log', PlotPoint, queue_size=10)
         self.set_gains = rospy.Service('set_gains', Gains, self.set_gains_callback)
-        self.ramp_gains = rospy.Service('ramp_gains', Gains, self.ramp_gains_callback)
         self.rci_state = rospy.Subscriber('rci_state', RobotState, self.rci_state_callback)
 
         self.pos_kp = 0.001
@@ -79,24 +76,6 @@ class PD:
         self.x_pid.set_gains(kp=msg.kp, ki= msg.ki, kd=msg.kd)
         self.y_pid.set_gains(kp=msg.kp, ki= msg.ki, kd=msg.kd)
         return 0
-
-    def ramp_gains_callback(self, msg):
-        kp_inc = (msg.kp - self.x_pid.kp)/500
-        ki_inc = (msg.ki - self.x_pid.ki)/500
-        kd_inc = (msg.kd - self.x_pid.kd)/500
-
-        for i in range(500):
-            self.x_pid.set_gains(
-                kp=self.x_pid.kp+kp_inc,
-                ki=self.x_pid.ki+ki_inc,
-                kd=self.x_pid.kd+kd_inc
-            )
-            self.y_pid.set_gains(
-                kp=self.y_pid.kp+kp_inc,
-                ki=self.y_pid.ki+ki_inc,
-                kd=self.y_pid.kd+kd_inc
-            )
-            time.sleep(0.01)
 
     def target_callback(self, msg):
         self.x_pid.set_target(msg.x_way)
