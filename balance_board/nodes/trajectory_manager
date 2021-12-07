@@ -1,14 +1,27 @@
 #!/usr/bin/env python3
 '''
-use control theta to control xddot, to get the desired velocity (both in acceleration zone constant zone and deceleration zone)
+Keeps track of progress along trajectories and publishes new ball position targets as appropriate
 
 PUBLISHERS:
-  + 
+
+  + target (Ball_pose)
+    ~   Publishes new target values for the position of the ball.
+
 SUBSCRIBERS
-  +  
+
+  +  ball_pose (Ball_pose)
+    ~   The current position of the ball (published by vision node)
+
+  +  rci_state (RobotState)
+    ~   The current enable state of the ros_control_interface (published by ros_control_interface
+
 SERVICES:
-  none
+  
+  + new_trajectory (Trajectory)
+    ~   Sets new trajectory for the ball to follow
+
 PARAMETERS
+
   + none
 '''
 #imports
@@ -18,10 +31,12 @@ from balance_board.srv import Trajectory
 import math
 # import geometry_msgs.msg
 
-class PD:
+class TrajectoryManager:
+    """ Keeps track of ball trajectory
+    """
     def __init__(self):
         '''
-        The initiation function of the flip. Initiates subscribers and variables
+        The initiation function of trajectory_manager. Initiates subscribers and variables
         INPUTS:
             none
         OUTPUTS:
@@ -41,7 +56,7 @@ class PD:
         self.rci_state= False
 
         # inits publishers, subscribers services
-        self.vision_system = rospy.Subscriber("/ball_pose", Ball_pose, self.vision_callback)
+        self.vision_system = rospy.Subscriber("ball_pose", Ball_pose, self.vision_callback)
         self.target = rospy.Publisher('target', Ball_pose)
         self.service = rospy.Service("new_trajectory", Trajectory, self.set_trajectory_callback)
         self.robot_state = rospy.Subscriber("rci_state", RobotState, self.rci_state_callback)
@@ -50,6 +65,14 @@ class PD:
 
 
     def vision_callback(self, msg):
+        '''
+        Checks whether ball has converged to current waypoint
+
+        INPUTS:
+            msg (Ball_pose) ~ current ball position
+        OUTPUTS:
+            none
+        '''
 
         if math.sqrt((msg.x-self.cur_x)**2 + (msg.y-self.cur_y)**2) < self.pos_tol:
             self.converged = True
@@ -57,13 +80,26 @@ class PD:
             self.converged = False
     
     def set_trajectory_callback(self, msg):
+        '''
+        Sets new Trajectory
+
+        INPUTS:
+            msg (Trajectory) ~ new trajectory to follow
+        OUTPUTS:
+            is_ok (True  ) ~ Responds whether trajectory was valid
+        '''
+
+        # checks if trajectory is valid
         if not len(msg.x_list) == len(msg.y_list):
             return False 
 
+        # checks of new trajectory should clear old trajectory
         if msg.clear_queue:
             self.x_queue = [*msg.x_list]
             self.y_queue = [*msg.y_list]
             self.repeat = msg.repeat
+
+            # checks if new trajectory should wait for each waypoint to converge or publish new waypoints at a set rate
             if msg.rate == 0:
                 self.wait = True
             else:
@@ -76,9 +112,18 @@ class PD:
         return True
 
     def send_target_callback(self, msg):
+        '''
+        Sends new position target from queue
+
+        INPUTS:
+            msg (unused)
+        OUTPUTS:
+            none
+        '''
         time = rospy.Time.now().to_sec()
         new_target = Ball_pose()
 
+        # if waypoint has converged or period exceeded, sends new waypoint. otherwise resends most recent waypoint
         if ((self.converged and self.wait) or (time - self.start_time > self.period)) and len(self.x_queue) > 0 and self.rci_state:
             new_x = self.x_queue.pop(0)
             new_y = self.y_queue.pop(0)
@@ -95,6 +140,14 @@ class PD:
         self.target.publish(new_target)
 
     def rci_state_callback(self, msg):
+        '''
+        Reads in robot enabling state
+
+        INPUTS:
+            msg (RobotState) ~ current robot state
+        OUTPUTS:
+            none
+        '''
         self.rci_state = msg.state
         
 
@@ -104,7 +157,7 @@ class PD:
 def main():
     
     rospy.init_node('trajectory_manager', anonymous=True)
-    controller = PD()
+    trajmgr = TrajectoryManager()
     rospy.spin()
 
 if __name__ == '__main__':

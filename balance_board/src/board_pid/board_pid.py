@@ -2,6 +2,9 @@ import time
 
 class BoardPid:
 
+    """ Implementation of PID
+    """
+
     def __init__(self,
         kp=0,                   # proportional gain
         ki=0,                   # integral gain
@@ -14,6 +17,24 @@ class BoardPid:
         in_max=None,
         halt_out=0
     ):
+
+        """ 
+        Initialization function 
+        INPUTS:
+            kp=0 ~ proportional gain                 
+            ki=0 ~ integral gain           
+            kd=0 ~ derivative gain               
+            target=0 ~ target setpoint   
+            derivative_window=1 ~ previous calls over which to average derivative 
+            timeout=None ~ timeout to reset integral          
+            int_max=None ~ maximum integral
+            out_max=None ~ maximum output
+            in_max=None ~ maximum input
+            halt_out=0 ~ "rest" output
+        OUTPUTS:
+            PID object
+
+        """
 
         # sets PID coefficients
         self.kp = kp
@@ -33,6 +54,15 @@ class BoardPid:
         self.halt_out = halt_out
 
     def get(self, val):
+
+        """ 
+        Gets PID output
+        INPUTS:
+            val ~ current process sensor value
+        OUTPUTS:
+            out ~ actuator output
+
+        """
 
         # Gets new output based on current sensor 
 
@@ -85,9 +115,25 @@ class BoardPid:
         return out
  
     def set_target(self, target):
+        """ 
+        Sets PID target
+        INPUTS:
+            target ~ new target
+        OUTPUTS:
+            none
+        """
         self.target = target # sets new target setpoint
 
     def set_gains(self, kp=None, ki=None, kd=None):
+        """ 
+        Sets PID gains
+        INPUTS:
+            kp=None ~ proportional gain
+            ki=None ~ integral gain
+            kd=None ~ derivative gain  
+        OUTPUTS:
+            none
+        """
         if not kp is None:
             self.kp = kp
         if not ki is None:

@@ -1,14 +1,30 @@
 #!/usr/bin/env python3
 '''
-use control theta to control xddot, to get the desired velocity (both in acceleration zone constant zone and deceleration zone)
+High level PD controller that takes as input the position of the ball on the board and outputs deisred angles of the board.
 
 PUBLISHERS:
-  + 
+
+  + angle_updates (BoardPose)
+    ~   Publishes new target values for the angles of the board.
+
 SUBSCRIBERS
-  +  
+
+  +  ball_pose (Ball_pose)
+    ~   The current position of the ball (published by vision node)
+
+  +  target (Ball_pose)
+    ~   The current target ball position (published by trajectory_manager)
+
+  +  rci_state (RobotState)
+    ~   The current enable state of the ros_control_interface (published by ros_control_interface
+
 SERVICES:
-  none
+  
+  + set_gains (Gains)
+    ~   Sets the gains for the board_pid objects in both dimensions
+
 PARAMETERS
+
   + none
 '''
 #imports
@@ -21,7 +37,8 @@ from board_pid import BoardPid
 class PD:
     def __init__(self):
         '''
-        The initiation function of the flip. Initiates subscribers and variables
+        The initiation function of the PD_controller. Initiates subscribers and variables
+
         INPUTS:
             none
         OUTPUTS:
@@ -34,16 +51,18 @@ class PD:
 
         # inits publishers, subscribers services
         self.angle_pub = rospy.Publisher('angle_updates', BoardPose, queue_size=10)
-        self.vision_system = rospy.Subscriber("/ball_pose", Ball_pose, self.vision_callback)
+        self.vision_system = rospy.Subscriber("ball_pose", Ball_pose, self.vision_callback)
         self.target = rospy.Subscriber('target', Ball_pose, self.target_callback)
         self.set_gains = rospy.Service('set_gains', Gains, self.set_gains_callback)
         self.rci_state = rospy.Subscriber('rci_state', RobotState, self.rci_state_callback)
 
+        # init PID parameters
         self.pos_kp = 0.001
         self.pos_ki = 0
         self.pos_kd = 0.001
         self.frames_smoothing = 1
 
+        # init x and y PID objects
         self.x_pid = BoardPid(
             kp=self.pos_kp,
             ki=self.pos_ki,
@@ -61,7 +80,16 @@ class PD:
         )
 
     def vision_callback(self, msg):
-        
+        '''
+        Updates ball position from new vision data, and publishes new angle target data
+
+        INPUTS:
+            msg (Ball_pose) ~ the new detected ball position
+
+        OUTPUTS:
+            none
+        '''
+
         # inits new board pose message
         pose = BoardPose()
 
@@ -69,19 +97,47 @@ class PD:
         pose.theta_x = self.x_pid.get(msg.x)
         pose.theta_y = -self.y_pid.get(msg.y)
 
-        # publishes new joint angles to the jci
+        # publishes new joint angles to the rci
         self.angle_pub.publish(pose)  
     
     def set_gains_callback(self, msg):
+        '''
+        Sets gains for PD objects
+
+        INPUTS:
+            msg (Gains) ~ the new set of gains
+            
+        OUTPUTS:
+            none
+        '''
+
         self.x_pid.set_gains(kp=msg.kp, ki= msg.ki, kd=msg.kd)
         self.y_pid.set_gains(kp=msg.kp, ki= msg.ki, kd=msg.kd)
         return 0
 
     def target_callback(self, msg):
+        '''
+        Sets new setpoint for PD objects
+
+        INPUTS:
+            msg (Ball_pose) ~ the new ball position target
+            
+        OUTPUTS:
+            none
+        '''
         self.x_pid.set_target(msg.x_way)
         self.y_pid.set_target(msg.y_way)
 
     def rci_state_callback(self, msg):
+        '''
+        If integral gain is nonzero, prevents integral windup while robot is disabled.
+
+        INPUTS:
+            msg (RobotState) ~ the new robot state 
+            
+        OUTPUTS:
+            none
+        '''
         if not msg.state:
             self.x_pid.int = 0
             self.y_pid.int = 0

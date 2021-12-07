@@ -1,28 +1,76 @@
 #!/usr/bin/env python3
-"""
-intermediate between nodes and position_joint_trajectory_controller/command
-in order to only publish new values when messages are sent to "angle_updates" -  because the publisher switches upon meeting acceleration limit
+'''
+Interface with low level controller
 
-"""
+PUBLISHERS:
+
+  + rci_state (RobotState)
+    ~   The current enable state of the robot
+
+  + cur_angles (BoardPose)
+    ~   The current x and y angles of the board, for plotting in rqt_gui during PID tuning
+
+  + cur_vels (RobotState)
+    ~   The current x and y anglular velocities of the board, for plotting in rqt_gui duiring PID tuning
+
+
+SUBSCRIBERS:
+
+  +  angle_updates (BoardPose)
+    ~   The current target board position (published by vision node)
+
+  +  joint_states (sensor_msgs/JointState)
+    ~   The current joint positions and angular velocities
+
+SERVICES:
+  
+  + start (Empty)
+    ~   Enables the robot for new position commands
+
+  + stop (Empty)
+    ~   Disables the robot from accepting new position commands
+
+  + home (Empty)
+    ~   Disables robot and sends robot to home position
+
+  +  position_joint_trajectory_controller/command (trajectory_msgs/JointTrajectory)
+    ~   Trajectory to send robot to home position
+
+  +  pos_control/command (std_msgs/Float64MultiArray)
+    ~   Joint position commands
+
+PARAMETERS:
+
+  + ~pub_freq (Float64)
+    ~   Angle target publishing frequency
+'''
 
 import rospy
 import moveit_commander
-from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
+from trajectory_msgs.msg import JointTrajectory
 from math import pi
 from std_srvs.srv import Empty, EmptyResponse
 from std_msgs.msg import Float64MultiArray
 from sensor_msgs.msg import JointState
 from balance_board.msg import BoardPose
-from balance_board.msg import PlotPoint
 from balance_board.msg import RobotState
-from board_pid import BoardPid
 from controller_manager_msgs.srv import SwitchController, SwitchControllerRequest
 import copy
 import sys
 
-class JointControllerInterface:
+class RosControlInterface:
+    ''' Low level conroller interface
+    '''
      
     def __init__(self):
+        '''
+        The initiation function of the ros_control_interface. Initiates subscribers and variables
+
+        INPUTS:
+            none
+        OUTPUTS:
+            none
+        '''
 
         # inits robot state (enabled/disabled) as disabled
         self.state = False
@@ -38,7 +86,7 @@ class JointControllerInterface:
         self.pos_command = Float64MultiArray()
 
         # reads in parameters
-        self.max_increment = rospy.get_param("~max_angle_increment")
+        # self.max_increment = rospy.get_param("~max_angle_increment")
         self.pub_freq = rospy.get_param("~joint_update_frequency")
 
         # inits subscribers/timers
@@ -93,11 +141,27 @@ class JointControllerInterface:
 
 
     def angle_subscriber_callback(self, message):
+        '''
+        Reads in new target angles and enforces joint limits
+
+        INPUTS:
+            message (BoardPose) ~ new target angles
+        OUTPUTS:
+            none
+        '''
         # sets new desired angles from high level controller
         self.theta_x = max(-pi/4, min(pi/4, message.theta_x))
         self.theta_y = max(-pi/4, min(pi/4, message.theta_y))
 
     def translator_callback(self, message):
+        '''
+        Republishes joint angles and velocities for plotting with rqt_gui
+
+        INPUTS:
+            message (sensor_msgs/JointState) ~ new current joint angles
+        OUTPUTS:
+            none
+        '''
         new_pose = BoardPose()
         new_vel = BoardPose()
         new_pose.theta_x = message.position[4] + pi/2
@@ -112,6 +176,15 @@ class JointControllerInterface:
         self.cur_vel_puv.publish(new_vel)
 
     def joint_timer_callback(self, message):
+
+        '''
+        Publishes new targets to low-level controller at a specified rate
+
+        INPUTS:
+            message (unused)
+        OUTPUTS:
+            none
+        '''
 
         # exits if robot is disabled wihthout sending new position target
         self.rci_state.publish(self.state)
@@ -129,6 +202,15 @@ class JointControllerInterface:
 
     # sends robot to home position
     def home_callback(self, message):
+        '''
+        Sends robot to home position
+
+        INPUTS:
+            message (unused)
+        OUTPUTS:
+            EmptyResponse()
+        '''
+
         self.switch.call(self.pos_to_traj)
         self.state = False
         mg = self.move_group
@@ -146,12 +228,28 @@ class JointControllerInterface:
 
     # enables robot (sets state to True)
     def enable_callback(self, message):
+        '''
+        Enables robot
+
+        INPUTS:
+            message (unused)
+        OUTPUTS:
+            EmptyResponse()
+        '''
         self.state = True
         self.switch.call(self.traj_to_pos)
         return EmptyResponse()
 
     # disables robot (sets state to False)
     def disable_callback(self, message):
+        '''
+        Disables robot
+
+        INPUTS:
+            message (unused)
+        OUTPUTS:
+            EmptyResponse()
+        '''
         self.state = False
         self.switch.call(self.pos_to_traj)
         return EmptyResponse()
@@ -165,6 +263,6 @@ if __name__=='__main__': # main run for node. inits node, runs class, and spins
         Empty
     '''
     moveit_commander.roscpp_initialize(sys.argv)
-    rospy.init_node('joint_controller_interface')
-    myJointControllerInterface = JointControllerInterface()
+    rospy.init_node('ros_control_interface')
+    myRCI = RosControlInterface()
     rospy.spin()

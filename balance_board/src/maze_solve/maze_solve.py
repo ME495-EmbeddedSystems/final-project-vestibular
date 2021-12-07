@@ -17,6 +17,14 @@ import matplotlib.pyplot as plt
 class Solver():
 
     def __init__(self, maze):
+        """ 
+        Init function
+        
+        INPUTS: 
+            maze (np.array) ~ mask containing walls of the maze as nonzero
+        OUTPUTS:
+            none
+        """
         self.maze = maze
         self.wall_cost_function = np.zeros(np.shape(maze))
         self.goal_cost_function = np.zeros(np.shape(maze))-1
@@ -35,16 +43,14 @@ class Solver():
 
 
     def goal_cost(self, goal):
-        # queue = [goal]
-        # while True:
-        #     index = queue.pop(0)
-        #     print(self.maze[index[1]][index[0]])
-        #     if self.maze[index[1]][index[0]] == 0:
-        #         goal = (index[0], index[1])
-        #         break
-        #     else:
-        #         for shift in self.neighbors:
-        #             queue.append((index[0]+shift[0], index[1]+shift[1]))
+        """ 
+        Iterates over map to generate path cost map instance variable
+        
+        INPUTS: 
+            goal (np.array) ~ goal cell
+        OUTPUTS:
+            none
+        """
 
         queue = [(goal[0], goal[1])]
         self.goal_cost_function[goal[1]][goal[0]] = 0
@@ -66,6 +72,14 @@ class Solver():
         print(n)
 
     def wall_cost(self):
+        """ 
+        Iterates over map to generate wall cost map instance variable
+        
+        INPUTS: 
+            none
+        OUTPUTS:
+            none
+        """
         (y, x) = np.where(self.maze>0)
         walls = [(x[i],y[i]) for i in range(len(y))]
         queue = walls.copy()
@@ -91,6 +105,14 @@ class Solver():
             
 
     def descend(self, cur):
+        """ 
+        Iterates over cost map to generate path
+        
+        INPUTS: 
+            cur (np.array) ~ start cell
+        OUTPUTS:
+            none
+        """
         queue = [cur]
         while True:
             index = queue.pop(0)
@@ -137,6 +159,15 @@ class Solver():
             self.path[self.y_list[i]][self.x_list[i]] = 255
 
     def solve_maze(self, start, end):
+        """ 
+        Solves a maze
+        
+        INPUTS: 
+            start (np.array) ~ start cell
+            end (np.array) ~ end cell
+        OUTPUTS:
+            none
+        """
         self.wall_cost()
         print("Wall done!")
         self.goal_cost(end)
@@ -146,6 +177,15 @@ class Solver():
         return (self.x_list, self.y_list)
     
     def solve_follow(self, start, end):
+        """ 
+        Follows a line by maze solving an inverted maze.
+        
+        INPUTS: 
+            start (np.array) ~ start cell
+            end (np.array) ~ end cell
+        OUTPUTS:
+            none
+        """
         maze_temp = self.maze
         inv_maze = np.zeros(np.shape(self.maze))
         inv_maze = np.where(self.maze == -1, 0, inv_maze)
@@ -154,28 +194,6 @@ class Solver():
         response = self.solve_maze(start, end)
         self.maze = maze_temp
         return response
-
-
-# maze = np.array([[0, 1, 0, 0, 0, 0]
-#     [0, 0, 0, 0, 0, 0],
-#     [0, 1, 0, 1, 0, 0],
-#     [0, 1, 0, 0, 1, 0],
-#     [0, 0, 0, 0, 1, 0]
-# ])
-
-# maze = np.loadtxt("test_values.txt", delimiter=",")
-# solver = Solver(maze)
-# print(solver.solve_maze((555,429), (339,356)))
-# print(solver.goal_cost_function)
-# print(solver.maze)
-# plt.imshow(solver.wall_cost_function)
-# plt.show()
-# plt.imshow(solver.goal_cost_function)
-# plt.show()
-# plt.spy(solver.path)
-# plt.show()
-# plt.spy(solver.maze)
-# plt.show()
 
 
 

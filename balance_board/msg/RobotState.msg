@@ -1,2 +1,2 @@
-# position of the ball on the plane board
-bool state #(m)
+# Enabled state of the robot
+bool state # True indicates enabled

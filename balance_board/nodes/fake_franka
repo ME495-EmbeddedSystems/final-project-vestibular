@@ -1,15 +1,12 @@
 #!/usr/bin/env python3
 '''
-use control theta to control xddot, to get the desired velocity (both in acceleration zone constant zone and deceleration zone)
+Used for running intergration tests, to offer a "dummy" version of a surface usually offered by franka_control, which is not loaded in rostests.
 
-PUBLISHERS:
-  + 
-SUBSCRIBERS
-  +  
 SERVICES:
-  none
-PARAMETERS
-  + none
+  + "controller_manager/switch_controller" (controller_manager_msgs/SwitchController)  
+    
+    ~ Dummy service that ros_control_interface requires be offered before it fully initializes. Returns True.
+
 '''
 #imports
 import rospy
@@ -17,10 +14,14 @@ from controller_manager_msgs.srv import SwitchController
 # import geometry_msgs.msg
 
 class FakeFranka:
+    """ Offers dummy service for rostests
+    """
     def __init__(self):
         self.service = rospy.Service("controller_manager/switch_controller", SwitchController, self.fake_switch_cb)
        
     def fake_switch_cb(self, msg):
+        """ Returns True for service calls to the controller switch during testing.
+        """
         return True
 
 def main():
